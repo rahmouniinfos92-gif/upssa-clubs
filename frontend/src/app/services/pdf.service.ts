@@ -1753,119 +1753,152 @@ export class PdfService {
     // ----------------- SECTION 7 : ENGAGEMENTS & SIGNATURES -----------------
     y += sec6H + 3.5;
     const sec7Y = y;
-    const sec7H = 68;
+    const sec7H = 82;
     doc.setFillColor(255, 255, 255);
     doc.setDrawColor(...borderColor);
     doc.setLineWidth(0.4);
     doc.roundedRect(margin, sec7Y, contentWidth, sec7H, 2, 2, 'FD');
-    drawSectionBar("7. ENGAGEMENTS SUR L'HONNEUR, DÉPÔT NUMÉRIQUE & DÉCISION DE LA COMMISSION", sec7Y);
+    drawSectionBar("7. ENGAGEMENTS SUR L'HONNEUR, DÉCISION DE LA COMMISSION & INSTAGRAM OFFICIEL", sec7Y);
 
-    // Honor Statement
+    // Top Area: Split between Honor Statement (left) and Instagram QR Card (right)
+    const topAreaY = sec7Y + 8.5;
+    const topAreaH = 26;
+
+    // 1. Honor Statement Block (Left)
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6.8);
+    doc.setTextColor(...primaryDark);
+    doc.text("ENGAGEMENT SUR L'HONNEUR DU COMITÉ FONDATEUR :", margin + 4, topAreaY + 4);
+
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(6.5);
+    doc.setFontSize(6.2);
     doc.setTextColor(...textDark);
-    const engStmt = "Les soussignés certifient sur l'honneur l'exactitude des renseignements fournis. Ils déclarent avoir pris connaissance des statuts et s'engagent à respecter la Charte de la Vie Étudiante de l'UPSSA 2026-2027. Saisie numérique obligatoire sur le portail pour instruction.";
-    doc.text(doc.splitTextToSize(engStmt, contentWidth - 40), margin + 5, sec7Y + 11);
+    const engStmt = "Les soussignés certifient sur l'honneur l'exactitude des renseignements fournis dans ce dossier préparatoire. Ils déclarent avoir pris connaissance des statuts et s'engagent à respecter la Charte de la Vie Étudiante de l'UPSSA 2026-2027. Saisie numérique obligatoire sur https://upssa-clubs.fly.dev pour instruction.";
+    doc.text(doc.splitTextToSize(engStmt, 136), margin + 4, topAreaY + 8.8);
 
-    // QR Code Box (Right-aligned)
-    const submitUrl = "https://upssa-clubs.fly.dev/creer-club";
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6);
+    doc.setTextColor(...textMuted);
+    doc.text("Fait à Agadir, le ...... / ...... / 2026       •       Portail officiel : upssa-clubs.fly.dev", margin + 4, topAreaY + 23.5);
+
+    // 2. Official Instagram QR Code Box (Right)
+    const igUrl = "https://www.instagram.com/upssa.connect/";
+    const igBoxW = 40;
+    const igBoxX = pageWidth - margin - igBoxW - 2; // 210 - 12 - 40 - 2 = 156mm
+    const igBoxH = topAreaH;
+
+    // Instagram Card background
+    doc.setFillColor(...bgCard);
+    doc.setDrawColor(...primaryColor);
+    doc.setLineWidth(0.4);
+    doc.roundedRect(igBoxX, topAreaY, igBoxW, igBoxH, 1.5, 1.5, 'FD');
+
+    // Instagram Header
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(5.6);
+    doc.setTextColor(...primaryDark);
+    const igTitle = "COMMUNAUTÉ UPSSA";
+    doc.text(igTitle, igBoxX + (igBoxW - doc.getTextWidth(igTitle)) / 2, topAreaY + 3.8);
+
+    // Instagram QR Code
     try {
-      const qrDataUrl = await QRCode.toDataURL(submitUrl, {
-        width: 120,
+      const qrDataUrl = await QRCode.toDataURL(igUrl, {
+        width: 140,
         margin: 1,
         color: { dark: '#003844', light: '#ffffff' }
       });
-      const qrX = pageWidth - margin - 32;
-      doc.addImage(qrDataUrl, 'PNG', qrX, sec7Y + 8, 28, 28);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(5.5);
-      doc.setTextColor(...primaryColor);
-      doc.text("SOUMETTRE EN LIGNE", qrX - 0.5, sec7Y + 38.5);
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(4.8);
-      doc.setTextColor(...textMuted);
-      doc.text("upssa-clubs.fly.dev", qrX + 1.5, sec7Y + 41.5);
+      const qrSize = 16.5;
+      const qrX = igBoxX + (igBoxW - qrSize) / 2;
+      doc.addImage(qrDataUrl, 'PNG', qrX, topAreaY + 4.8, qrSize, qrSize);
     } catch (e) {
-      console.warn("QR Code for paper form failed:", e);
+      console.warn("QR Code for instagram failed:", e);
     }
 
-    // 4 Signature / Decision Boxes (3 Student/Tutor + 1 Administration)
-    const signBoxY = sec7Y + 18.5;
-    const signBoxH = 45;
+    // Instagram Handle
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6.2);
+    doc.setTextColor(...primaryColor);
+    const igHandle = "@upssa.connect";
+    doc.text(igHandle, igBoxX + (igBoxW - doc.getTextWidth(igHandle)) / 2, topAreaY + 24.3);
+
+    // ----------------- Bottom Area: 4 Validation Boxes (Strictly below top area) -----------------
+    const signBoxY = topAreaY + topAreaH + 2.5; // Starts at sec7Y + 37mm
+    const signBoxH = 42; // Ends at sec7Y + 79mm (clean margin inside sec7H = 82mm)
 
     // Box 1: Président
-    const b1W = 39;
-    const b1X = margin + 3;
+    const b1W = 38;
+    const b1X = margin + 2.5;
     doc.setFillColor(250, 250, 252);
     doc.setDrawColor(...borderColor);
+    doc.setLineWidth(0.35);
     doc.roundedRect(b1X, signBoxY, b1W, signBoxH, 1, 1, 'FD');
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(6.7);
+    doc.setFontSize(6.3);
     doc.setTextColor(...primaryDark);
-    doc.text("LE/LA PRÉSIDENT(E)", b1X + 3.5, signBoxY + 5);
+    doc.text("LE/LA PRÉSIDENT(E)", b1X + 3, signBoxY + 4.8);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(5.8);
     doc.setTextColor(...textMuted);
-    doc.text("Nom : ...................................", b1X + 3.5, signBoxY + 10);
-    doc.text("Date : ...................................", b1X + 3.5, signBoxY + 15);
-    doc.text("Mention : \"Lu et approuvé\"", b1X + 3.5, signBoxY + 20);
-    doc.text("Signature manuscrite :", b1X + 3.5, signBoxY + 25);
+    doc.text("Nom : ...................................", b1X + 3, signBoxY + 9.5);
+    doc.text("Date : ...................................", b1X + 3, signBoxY + 14.5);
+    doc.text("Mention : \"Lu et approuvé\"", b1X + 3, signBoxY + 19.5);
+    doc.text("Signature manuscrite :", b1X + 3, signBoxY + 24.5);
 
     // Box 2: Secrétaire Général
-    const b2W = 39;
+    const b2W = 38;
     const b2X = b1X + b1W + 2.5;
     doc.setFillColor(250, 250, 252);
     doc.setDrawColor(...borderColor);
     doc.roundedRect(b2X, signBoxY, b2W, signBoxH, 1, 1, 'FD');
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(6.7);
+    doc.setFontSize(6.1);
     doc.setTextColor(...primaryDark);
-    doc.text("LE/LA SECRÉTAIRE GÉNÉRAL(E)", b2X + 3.5, signBoxY + 5);
+    doc.text("SECRÉTAIRE GÉNÉRAL(E)", b2X + 2.5, signBoxY + 4.8);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(5.8);
     doc.setTextColor(...textMuted);
-    doc.text("Nom : ...................................", b2X + 3.5, signBoxY + 10);
-    doc.text("Date : ...................................", b2X + 3.5, signBoxY + 15);
-    doc.text("Mention : \"Lu et approuvé\"", b2X + 3.5, signBoxY + 20);
-    doc.text("Signature manuscrite :", b2X + 3.5, signBoxY + 25);
+    doc.text("Nom : ...................................", b2X + 3, signBoxY + 9.5);
+    doc.text("Date : ...................................", b2X + 3, signBoxY + 14.5);
+    doc.text("Mention : \"Lu et approuvé\"", b2X + 3, signBoxY + 19.5);
+    doc.text("Signature manuscrite :", b2X + 3, signBoxY + 24.5);
 
     // Box 3: Tuteur Enseignant Référent
-    const b3W = 41;
+    const b3W = 40;
     const b3X = b2X + b2W + 2.5;
     doc.setFillColor(250, 250, 252);
     doc.setDrawColor(...borderColor);
     doc.roundedRect(b3X, signBoxY, b3W, signBoxH, 1, 1, 'FD');
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(6.7);
+    doc.setFontSize(6.3);
     doc.setTextColor(...primaryDark);
-    doc.text("TUTEUR ENSEIGNANT", b3X + 3.5, signBoxY + 5);
+    doc.text("TUTEUR ENSEIGNANT", b3X + 3, signBoxY + 4.8);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(5.8);
     doc.setTextColor(...textMuted);
-    doc.text("Dr. Loubna Agouzal (ou réf.)", b3X + 3.5, signBoxY + 10);
-    doc.text("Avis : [ ] Favorable  [ ] Réserves", b3X + 3.5, signBoxY + 15);
-    doc.text("Date : ...................................", b3X + 3.5, signBoxY + 20);
-    doc.text("Signature & Cachet :", b3X + 3.5, signBoxY + 25);
+    doc.text("Dr. Loubna Agouzal (ou réf.)", b3X + 3, signBoxY + 9.5);
+    doc.text("Avis : [ ] Favorable  [ ] Réserves", b3X + 3, signBoxY + 14.5);
+    doc.text("Date : ...................................", b3X + 3, signBoxY + 19.5);
+    doc.text("Signature & Cachet :", b3X + 3, signBoxY + 24.5);
 
     // Box 4: Administration UPSSA (Direction de la Vie Étudiante)
-    const b4W = 57;
+    const b4W = 58;
     const b4X = b3X + b3W + 2.5;
     doc.setFillColor(245, 249, 250);
     doc.setDrawColor(...primaryDark);
     doc.setLineWidth(0.5);
     doc.roundedRect(b4X, signBoxY, b4W, signBoxH, 1.5, 1.5, 'FD');
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(6.7);
+    doc.setFontSize(6.3);
     doc.setTextColor(...primaryDark);
-    doc.text("CADRE RÉSERVÉ À L'ADMINISTRATION", b4X + 3.5, signBoxY + 5);
+    doc.text("CADRE RÉSERVÉ À L'ADMINISTRATION", b4X + 3.5, signBoxY + 4.8);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(5.8);
     doc.setTextColor(...primaryColor);
-    doc.text("Commission de la Vie Étudiante UPSSA", b4X + 3.5, signBoxY + 9.5);
+    doc.text("Commission de la Vie Étudiante UPSSA", b4X + 3.5, signBoxY + 9);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(5.8);
     doc.setTextColor(...textDark);
-    doc.text("Avis : [ ] Agréé  [ ] Rejeté  [ ] Réserves", b4X + 3.5, signBoxY + 14.5);
+    doc.text("Avis : [ ] Agréé  [ ] Rejeté  [ ] Réserves", b4X + 3.5, signBoxY + 14);
     doc.text("Séance du : ...... / ...... / 2026", b4X + 3.5, signBoxY + 19);
     doc.setTextColor(...textMuted);
     doc.text("Visa & Cachet Officiel UPSSA :", b4X + 3.5, signBoxY + 24);
