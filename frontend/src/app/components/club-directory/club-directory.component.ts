@@ -266,6 +266,17 @@ import { ClubApplication, ClubMember } from '../../models/club.model';
             <div class="header-right-tools">
               <button 
                 type="button" 
+                class="btn btn-primary btn-sm btn-modal-sheet" 
+                (click)="downloadAllMembersPdf()"
+                [disabled]="generatingAllPdf || membersList.length === 0"
+                title="Télécharger le registre officiel de toutes les inscriptions au format PDF"
+                style="margin-right: 0.35rem;"
+              >
+                <span *ngIf="!generatingAllPdf">📋 Registre Inscriptions (PDF)</span>
+                <span *ngIf="generatingAllPdf">⏳ Téléchargement...</span>
+              </button>
+              <button 
+                type="button" 
                 class="btn btn-outline btn-sm btn-modal-sheet" 
                 (click)="downloadClubSheet(membersModalClub)"
                 [disabled]="downloadingSheetClubId === membersModalClub.id"
@@ -457,10 +468,10 @@ import { ClubApplication, ClubMember } from '../../models/club.model';
                     class="btn-member-pdf" 
                     (click)="downloadMemberPdf(m)"
                     [disabled]="generatingPdfMemberId === m.id"
-                    title="Télécharger l'Attestation Officielle d'Adhésion en PDF"
+                    title="Télécharger la Fiche Officielle d'Inscription au format PDF"
                   >
                     <span *ngIf="generatingPdfMemberId === m.id">⏳ Génération...</span>
-                    <span *ngIf="generatingPdfMemberId !== m.id">📄 Attestation PDF</span>
+                    <span *ngIf="generatingPdfMemberId !== m.id">📄 Fiche Inscription (PDF)</span>
                   </button>
                   <button 
                     type="button" 
@@ -736,7 +747,7 @@ import { ClubApplication, ClubMember } from '../../models/club.model';
               [disabled]="generatingPdfMemberId === detailedMember.id"
             >
               <span *ngIf="generatingPdfMemberId === detailedMember.id">Génération...</span>
-              <span *ngIf="generatingPdfMemberId !== detailedMember.id">📄 Télécharger l'Attestation (PDF)</span>
+              <span *ngIf="generatingPdfMemberId !== detailedMember.id">📄 Télécharger la Fiche d'Inscription (PDF)</span>
             </button>
             <button type="button" class="btn btn-secondary" (click)="printMemberDetail()">
               🖨️ Imprimer la Fiche
@@ -2468,6 +2479,7 @@ export class ClubDirectoryComponent implements OnInit {
   // Individual Member Detail Modal State
   detailedMember: ClubMember | null = null;
   generatingPdfMemberId: number | null = null;
+  generatingAllPdf = false;
   downloadingSheetClubId: number | null = null;
 
   // Feedback Notification
@@ -2756,6 +2768,21 @@ export class ClubDirectoryComponent implements OnInit {
     window.print();
   }
 
+  downloadAllMembersPdf(): void {
+    if (!this.membersModalClub || this.membersList.length === 0) return;
+    this.generatingAllPdf = true;
+    this.pdfService.generateClubMembersListPdf(this.membersModalClub, this.membersList, true)
+      .then(() => {
+        this.generatingAllPdf = false;
+        this.showNotification(`Registre officiel des inscriptions généré en PDF pour « ${this.membersModalClub?.official_name} »`);
+      })
+      .catch((err) => {
+        this.generatingAllPdf = false;
+        console.error('Error generating members list PDF:', err);
+        this.showNotification('Erreur lors de la génération du registre PDF.', 'error');
+      });
+  }
+
   // Individual Member PDF & Detail Modal
   downloadMemberPdf(member: ClubMember): void {
     if (!this.membersModalClub) return;
@@ -2763,7 +2790,7 @@ export class ClubDirectoryComponent implements OnInit {
     this.pdfService.generateMembershipPdf(this.membersModalClub, member, true)
       .then(() => {
         this.generatingPdfMemberId = null;
-        this.showNotification(`Attestation officielle en PDF générée pour ${member.full_name}`);
+        this.showNotification(`Fiche officielle d'inscription générée pour ${member.full_name}`);
       })
       .catch((err) => {
         this.generatingPdfMemberId = null;

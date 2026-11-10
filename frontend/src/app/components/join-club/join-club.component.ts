@@ -122,9 +122,9 @@ import { ClubApplication, ClubMember } from '../../models/club.model';
             <div class="alert alert-success mt-3" style="display: flex; align-items: center; gap: 0.6rem; border-left: 4px solid var(--success);">
               <span style="font-size: 1.3rem;">📄</span>
               <div>
-                <strong>Attestation d'inscription officielle générée en PDF !</strong>
+                <strong>Fiche Officielle d'Inscription (PDF) générée avec succès !</strong>
                 <p style="margin: 0; font-size: 0.85rem; color: #166534;">
-                  Le fichier PDF officiel a été automatiquement généré et téléchargé sur votre appareil. Vous pouvez également le réimprimer ou le retélécharger ci-dessous.
+                  Le fichier PDF contenant toutes les rubriques de votre inscription (identité, faculté, niveau, loisirs, compétences, idée de projet, engagement et visa officiel) a été téléchargé sur votre appareil.
                 </p>
               </div>
             </div>
@@ -132,7 +132,7 @@ import { ClubApplication, ClubMember } from '../../models/club.model';
             <!-- SUCCESS ACTIONS -->
             <div class="success-actions mt-4">
               <button type="button" class="btn btn-primary" (click)="downloadPdf()">
-                📄 Télécharger l'Attestation (PDF)
+                📄 Télécharger la Fiche d'Inscription (PDF)
               </button>
               <button type="button" class="btn btn-secondary" (click)="printCard()">
                 🖨️ Imprimer la Carte de Membre

@@ -419,9 +419,19 @@
 
         <!-- 7. MEMBRES ADHÉRENTS (QR CODE) -->
         <div class="review-section" *ngIf="selectedClub.members && selectedClub.members.length > 0">
-          <h4 class="review-sec-title">
-            👥 Membres Adhérents Inscrits via QR Code ({{ selectedClub.members.length }})
-          </h4>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+            <h4 class="review-sec-title" style="margin: 0;">
+              👥 Membres Adhérents Inscrits via QR Code ({{ selectedClub.members.length }})
+            </h4>
+            <button 
+              type="button" 
+              class="btn btn-primary btn-sm" 
+              (click)="downloadClubMembersListPdf()"
+              title="Télécharger le registre officiel de toutes les inscriptions en PDF"
+            >
+              📋 Registre des Inscriptions (PDF)
+            </button>
+          </div>
           <div style="overflow-x: auto;">
             <table class="table" style="font-size: 0.85rem; width: 100%;">
               <thead>
@@ -431,6 +441,7 @@
                   <th style="padding: 0.6rem;">Loisir</th>
                   <th style="padding: 0.6rem;">Compétence</th>
                   <th style="padding: 0.6rem;">Idée de projet</th>
+                  <th style="padding: 0.6rem; text-align: right;">Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -443,6 +454,17 @@
                   <td style="padding: 0.6rem;">{{ m.loisir }}</td>
                   <td style="padding: 0.6rem;">{{ m.competence }}</td>
                   <td style="padding: 0.6rem;"><em>{{ m.project_idea || '—' }}</em></td>
+                  <td style="padding: 0.6rem; text-align: right;">
+                    <button 
+                      type="button" 
+                      class="btn btn-outline btn-sm" 
+                      (click)="downloadMemberPdf(m)"
+                      title="Télécharger la fiche officielle d'inscription de cet étudiant en PDF"
+                      style="padding: 0.2rem 0.5rem; font-size: 0.75rem;"
+                    >
+                      📄 Fiche PDF
+                    </button>
+                  </td>
                 </tr>
               </tbody>
             </table>

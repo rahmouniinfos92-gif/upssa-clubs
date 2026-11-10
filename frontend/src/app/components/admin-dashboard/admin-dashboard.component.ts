@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ClubService } from '../../services/club.service';
 import { PdfService } from '../../services/pdf.service';
-import { ClubApplication, ClubStatus, DashboardStats } from '../../models/club.model';
+import { ClubApplication, ClubMember, ClubStatus, DashboardStats } from '../../models/club.model';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -151,6 +151,24 @@ export class AdminDashboardComponent implements OnInit {
       console.error('Erreur génération fiche du club:', err);
     } finally {
       this.isGeneratingPdf = false;
+    }
+  }
+
+  async downloadMemberPdf(member: ClubMember): Promise<void> {
+    if (!this.selectedClub) return;
+    try {
+      await this.pdfService.generateMembershipPdf(this.selectedClub, member, true);
+    } catch (e) {
+      console.error('Erreur PDF fiche membre:', e);
+    }
+  }
+
+  async downloadClubMembersListPdf(): Promise<void> {
+    if (!this.selectedClub || !this.selectedClub.members || this.selectedClub.members.length === 0) return;
+    try {
+      await this.pdfService.generateClubMembersListPdf(this.selectedClub, this.selectedClub.members, true);
+    } catch (e) {
+      console.error('Erreur registre des inscriptions PDF:', e);
     }
   }
 

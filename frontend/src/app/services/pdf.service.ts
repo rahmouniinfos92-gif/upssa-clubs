@@ -32,6 +32,10 @@ export class PdfService {
    * Generates a high-quality, official UPSSA PDF Membership Certificate and Registration Form.
    * If autoDownload is true, triggers browser download directly.
    */
+  /**
+   * Generates a high-quality, comprehensive official UPSSA Club Registration Form & Membership Sheet.
+   * Contains EVERY rubric of the student registration (Identity, Faculty, Level, Contacts, Hobbies, Skills, Proposed Project, Club Info, Engagement, Signatures, QR Code).
+   */
   async generateMembershipPdf(club: ClubApplication, member: ClubMember, autoDownload: boolean = true): Promise<jsPDF> {
     const doc = new jsPDF({
       orientation: 'portrait',
@@ -41,363 +45,567 @@ export class PdfService {
 
     const pageWidth = 210;
     const pageHeight = 297;
-    const margin = 15;
-    const contentWidth = pageWidth - (margin * 2); // 180mm
+    const margin = 14;
+    const contentWidth = pageWidth - (margin * 2); // 182mm
 
-    // ----------------- COLOR PALETTE -----------------
+    // Color palette
     const primaryColor: [number, number, number] = [0, 154, 166];      // #009aa6 (UPSSA Teal)
     const primaryDark: [number, number, number] = [0, 56, 68];         // #003844 (Deep Navy)
     const primaryLight: [number, number, number] = [230, 246, 247];    // #e6f6f7 (Teal Soft)
     const accentColor: [number, number, number] = [2, 128, 144];       // #028090
     const textDark: [number, number, number] = [15, 23, 42];           // #0f172a
     const textMuted: [number, number, number] = [100, 116, 139];       // #64748b
-    const borderColor: [number, number, number] = [220, 231, 233];     // #dce7e9
+    const borderColor: [number, number, number] = [203, 213, 225];     // #cbd5e1
     const bgCard: [number, number, number] = [248, 250, 252];          // #f8fafc
 
-    // 1. TOP COLOR ACCENT BAR
+    // 1. TOP COLOR BAR
     doc.setFillColor(...primaryColor);
-    doc.rect(0, 0, pageWidth, 7, 'F');
+    doc.rect(0, 0, pageWidth, 6, 'F');
 
     // 2. HEADER: UNIVERSITY BRANDING
-    let y = 16;
+    let y = 14;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10.5);
+    doc.setTextColor(...primaryDark);
+    doc.text('UNIVERSITÉ PRIVÉE DE LA SANTÉ ET DES SCIENCES D\'AGADIR', margin, y);
+
+    y += 4.5;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(...textMuted);
+    doc.text('Pôle de la Vie Associative & Affaires Estudiantines • Campus UPSSA Agadir', margin, y);
+
+    // Right-aligned academic year badge
+    doc.setFillColor(...primaryLight);
+    doc.roundedRect(pageWidth - margin - 52, 10, 52, 11, 2, 2, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.setTextColor(...primaryColor);
+    doc.text('ANNÉE UNIVERSITAIRE', pageWidth - margin - 50, 14.5);
+    doc.setFontSize(8.5);
+    doc.setTextColor(...primaryDark);
+    doc.text('2026 - 2027', pageWidth - margin - 50, 18.5);
+
+    // Thin separator
+    y += 5.5;
+    doc.setDrawColor(...borderColor);
+    doc.setLineWidth(0.4);
+    doc.line(margin, y, pageWidth - margin, y);
+
+    // 3. TITLE BLOCK: FICHE OFFICIELLE D'INSCRIPTION & D'ADHÉSION
+    y += 6;
+    doc.setFillColor(...primaryDark);
+    doc.roundedRect(margin, y, contentWidth, 13, 2, 2, 'F');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(255, 255, 255);
+    doc.text('FICHE OFFICIELLE D\'INSCRIPTION & D\'ADHÉSION AU CLUB', margin + 6, y + 8.5);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(165, 243, 252);
+    doc.text('REGISTRE OFFICIEL ÉTUDIANT', pageWidth - margin - 48, y + 8.5);
+
+    // Helper to render section title bar
+    const renderSectionHeader = (title: string, topY: number, height: number = 6.5) => {
+      doc.setFillColor(...primaryLight);
+      doc.roundedRect(margin, topY, contentWidth, height, 1.5, 1.5, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(...primaryDark);
+      doc.text(title, margin + 4, topY + 4.5);
+    };
+
+    // 4. RUBRIQUE 1 : IDENTITÉ & SITUATION ACADÉMIQUE DE L'ÉTUDIANT(E)
+    y += 16;
+    const sec1Y = y;
+    const sec1H = 26;
+    doc.setFillColor(255, 255, 255);
+    doc.setDrawColor(...borderColor);
+    doc.setLineWidth(0.4);
+    doc.roundedRect(margin, sec1Y, contentWidth, sec1H, 2, 2, 'FD');
+    renderSectionHeader('RUBRIQUE 1 & 2 : IDENTITÉ ACADÉMIQUE & COORDONNÉES DE L\'ÉTUDIANT(E)', sec1Y);
+
+    const c1X = margin + 5;
+    const c2X = margin + 68;
+    const c3X = margin + 128;
+    const row1Y = sec1Y + 11.5;
+    const row2Y = sec1Y + 19.5;
+
+    // Nom & Prénom
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.setTextColor(...textMuted);
+    doc.text('NOM & PRÉNOM :', c1X, row1Y);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9.5);
+    doc.setTextColor(...primaryDark);
+    doc.text(cleanPdfText(member.full_name) || '—', c1X, row1Y + 4.5);
+
+    // Faculté
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.setTextColor(...textMuted);
+    doc.text('FACULTÉ :', c2X, row1Y);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    doc.setTextColor(...accentColor);
+    doc.text(cleanPdfText(member.filiere) || 'UPSSA', c2X, row1Y + 4.5);
+
+    // Niveau
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.setTextColor(...textMuted);
+    doc.text('ANNÉE / NIVEAU :', c3X, row1Y);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    doc.setTextColor(...textDark);
+    doc.text(cleanPdfText(member.academic_year) || '—', c3X, row1Y + 4.5);
+
+    // Identifiant unique
+    const memberCode = `UPSSA-MBR-${club.id || 1}-${member.id || 'NEW'}`;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.setTextColor(...textMuted);
+    doc.text('IDENTIFIANT D\'ADHÉRENT :', c1X, row2Y);
+    doc.setFont('courier', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(...primaryColor);
+    doc.text(memberCode, c1X, row2Y + 4);
+
+    // Email
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.setTextColor(...textMuted);
+    doc.text('EMAIL UNIVERSITAIRE :', c2X, row2Y);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(...textDark);
+    doc.text(cleanPdfText(member.email) || 'Non renseigné', c2X, row2Y + 4);
+
+    // Téléphone
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.setTextColor(...textMuted);
+    doc.text('TÉLÉPHONE / WHATSAPP :', c3X, row2Y);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(...textDark);
+    doc.text(cleanPdfText(member.phone) || 'Non renseigné', c3X, row2Y + 4);
+
+    // 5. RUBRIQUE 3 : CLUB D'ACCUEIL & ENCADREMENT
+    y += sec1H + 3.5;
+    const sec2Y = y;
+    const sec2H = 22;
+    doc.setFillColor(...bgCard);
+    doc.setDrawColor(...borderColor);
+    doc.setLineWidth(0.4);
+    doc.roundedRect(margin, sec2Y, contentWidth, sec2H, 2, 2, 'FD');
+    renderSectionHeader('RUBRIQUE 3 : CLUB ÉTUDIANT D\'ACCUEIL & ENCADREMENT', sec2Y);
+
+    const safeClubName = cleanPdfText(club.official_name);
+    const safeAcronym = cleanPdfText(club.acronym);
+    const clubTitle = `${safeClubName}${safeAcronym ? ' (' + safeAcronym + ')' : ''}`;
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(...primaryDark);
+    doc.text(clubTitle, c1X, sec2Y + 11.5);
+
+    // Typology Tag
+    doc.setFillColor(...primaryColor);
+    doc.roundedRect(pageWidth - margin - 46, sec2Y + 8, 42, 5, 1, 1, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6.5);
+    doc.setTextColor(255, 255, 255);
+    doc.text(cleanPdfText(club.typology).substring(0, 26), pageWidth - margin - 44, sec2Y + 11.5);
+
+    // Details line
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(...textDark);
+    doc.text(`Président(e) : ${cleanPdfText(club.president_name)}`, c1X, sec2Y + 16.5);
+    doc.text(`Tuteur Référent : ${cleanPdfText(club.faculty_advisor_name) || 'Dr. Loubna Agouzal'}`, c2X, sec2Y + 16.5);
+    doc.text(`Statut : Agrément Universitaire Validé`, c3X, sec2Y + 16.5);
+
+    // Slogan or mission excerpt
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(7);
+    doc.setTextColor(...textMuted);
+    const safeSlogan = cleanPdfText(club.slogan);
+    const subText = safeSlogan ? `« ${safeSlogan} »` : `Mission : ${cleanPdfText(club.main_mission).substring(0, 95)}...`;
+    doc.text(subText, c1X, sec2Y + 20);
+
+    // 6. RUBRIQUE 4 : CENTRES D'INTÉRÊT & LOISIRS
+    y += sec2H + 3.5;
+    const sec3Y = y;
+    const sec3H = 17.5;
+    doc.setFillColor(255, 255, 255);
+    doc.setDrawColor(...borderColor);
+    doc.setLineWidth(0.4);
+    doc.roundedRect(margin, sec3Y, contentWidth, sec3H, 2, 2, 'FD');
+    renderSectionHeader('RUBRIQUE 4 : CENTRES D\'INTÉRÊT, LOISIRS & PASSIONS PERSONNELLES', sec3Y);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(...textDark);
+    const cleanLoisir = cleanPdfText(member.loisir) || 'Aucun loisir particulier mentionné.';
+    const loisirLines = doc.splitTextToSize(cleanLoisir, contentWidth - 10);
+    doc.text(loisirLines.slice(0, 2), c1X, sec3Y + 11);
+
+    // 7. RUBRIQUE 5 : COMPÉTENCES & SAVOIR-FAIRE
+    y += sec3H + 3.5;
+    const sec4Y = y;
+    const sec4H = 17.5;
+    doc.setFillColor(255, 255, 255);
+    doc.setDrawColor(...borderColor);
+    doc.setLineWidth(0.4);
+    doc.roundedRect(margin, sec4Y, contentWidth, sec4H, 2, 2, 'FD');
+    renderSectionHeader('RUBRIQUE 5 : COMPÉTENCES, ATOUTS & SAVOIR-FAIRE APPORTÉS AU CLUB', sec4Y);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(...textDark);
+    const cleanComp = cleanPdfText(member.competence) || 'Aucune compétence technique spécifique renseignée.';
+    const compLines = doc.splitTextToSize(cleanComp, contentWidth - 10);
+    doc.text(compLines.slice(0, 2), c1X, sec4Y + 11);
+
+    // 8. RUBRIQUE 6 : IDÉE DE PROJET PROPOSÉE POUR LE CLUB
+    y += sec4H + 3.5;
+    const sec5Y = y;
+    const sec5H = 19;
+    doc.setFillColor(255, 255, 255);
+    doc.setDrawColor(...borderColor);
+    doc.setLineWidth(0.4);
+    doc.roundedRect(margin, sec5Y, contentWidth, sec5H, 2, 2, 'FD');
+    renderSectionHeader('RUBRIQUE 6 : INITIATIVE & IDÉE DE PROJET PROPOSÉE POUR LE CLUB', sec5Y);
+
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(8);
+    doc.setTextColor(30, 41, 59);
+    const cleanProj = cleanPdfText(member.project_idea);
+    const projText = cleanProj ? `« ${cleanProj} »` : 'Aucune idée d\'événement formulée lors de l\'enregistrement.';
+    const projLines = doc.splitTextToSize(projText, contentWidth - 10);
+    doc.text(projLines.slice(0, 2), c1X, sec5Y + 11.5);
+
+    // 9. RUBRIQUE 7 : ENGAGEMENT DE L'ADHÉRENT & CHARTE ÉTUDIANTE
+    y += sec5H + 3.5;
+    const sec6Y = y;
+    const sec6H = 14;
+    doc.setFillColor(...bgCard);
+    doc.setDrawColor(...borderColor);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(margin, sec6Y, contentWidth, sec6H, 1.5, 1.5, 'FD');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(...primaryDark);
+    doc.text('RUBRIQUE 7 : ENGAGEMENT ASSOCIATIF & CHARTE DE LA VIE ÉTUDIANTE', c1X, sec6Y + 4.5);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(...textDark);
+    const engagementText = "Je soussigné(e), déclare sur l'honneur l'exactitude des renseignements ci-dessus et sollicite mon adhésion officielle au club. Je m'engage à respecter les statuts de l'association, le règlement intérieur et la Charte de la Vie Étudiante de l'UPSSA pour l'année 2026-2027.";
+    const engLines = doc.splitTextToSize(engagementText, contentWidth - 10);
+    doc.text(engLines, c1X, sec6Y + 8.5);
+
+    // 10. RUBRIQUE 8 : VALIDATION, CACHET UPSSA & AUTHENTIFICATION QR CODE
+    y += sec6H + 3.5;
+    const sec7Y = y;
+    const sec7H = 42;
+    doc.setFillColor(255, 255, 255);
+    doc.setDrawColor(...borderColor);
+    doc.setLineWidth(0.4);
+    doc.roundedRect(margin, sec7Y, contentWidth, sec7H, 2, 2, 'FD');
+
+    // QR Code
+    const verifyUrl = typeof window !== 'undefined'
+      ? `${window.location.origin}/rejoindre/${club.id || ''}`
+      : `https://upssa-clubs.fly.dev/rejoindre/${club.id || ''}`;
+    
+    try {
+      const qrDataUrl = await QRCode.toDataURL(verifyUrl, {
+        width: 130,
+        margin: 1,
+        color: { dark: '#003844', light: '#ffffff' }
+      });
+      doc.addImage(qrDataUrl, 'PNG', margin + 4, sec7Y + 3.5, 26, 26);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(6);
+      doc.setTextColor(...primaryColor);
+      doc.text('AUTHENTIFICATION QR', margin + 5, sec7Y + 33);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(5.5);
+      doc.setTextColor(...textMuted);
+      doc.text('Vérification adhésion UPSSA', margin + 4, sec7Y + 36.5);
+    } catch (e) {
+      console.warn('QR Code generation for registration PDF failed:', e);
+    }
+
+    // Student Signature Block
+    const signStudX = margin + 35;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.setTextColor(...textMuted);
+    doc.text('SIGNATURE DE L\'ÉTUDIANT(E) :', signStudX, sec7Y + 6);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    doc.setTextColor(...primaryDark);
+    doc.text(cleanPdfText(member.full_name), signStudX, sec7Y + 11.5);
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(6.5);
+    doc.setTextColor(...textMuted);
+    doc.text('Mention : « Lu et approuvé »', signStudX, sec7Y + 16);
+    doc.setFont('courier', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(148, 163, 184);
+    doc.text('Signé électroniquement', signStudX, sec7Y + 28);
+
+    // President Signature Block
+    const signPresX = margin + 85;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.setTextColor(...textMuted);
+    doc.text('POUR LE BUREAU DU CLUB :', signPresX, sec7Y + 6);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    doc.setTextColor(...primaryDark);
+    doc.text(cleanPdfText(club.president_name), signPresX, sec7Y + 11.5);
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(6.5);
+    doc.setTextColor(...textMuted);
+    doc.text('Président(e) en exercice', signPresX, sec7Y + 16);
+    doc.setFont('courier', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(148, 163, 184);
+    doc.text('Avis favorable accordé', signPresX, sec7Y + 28);
+
+    // Official Stamp UPSSA (Right)
+    const sealX = pageWidth - margin - 52;
+    doc.setDrawColor(...primaryColor);
+    doc.setLineWidth(0.7);
+    doc.roundedRect(sealX, sec7Y + 4, 48, 34, 2, 2, 'D');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6.5);
+    doc.setTextColor(...primaryColor);
+    doc.text('UPSSA AGADIR • CAMPUS', sealX + 7, sec7Y + 9.5);
+    doc.setDrawColor(...primaryColor);
+    doc.setLineWidth(0.3);
+    doc.line(sealX + 4, sec7Y + 11.5, sealX + 44, sec7Y + 11.5);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.setTextColor(...primaryDark);
+    doc.text('DIRECTION DE LA', sealX + 11, sec7Y + 16.5);
+    doc.text('VIE ÉTUDIANTE', sealX + 13, sec7Y + 20.5);
+
+    doc.setFillColor(...primaryLight);
+    doc.roundedRect(sealX + 5, sec7Y + 23, 38, 5.5, 1, 1, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6);
+    doc.setTextColor(...primaryColor);
+    doc.text('INSCRIPTION VALIDÉE', sealX + 8, sec7Y + 27);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(5.5);
+    doc.setTextColor(...textMuted);
+    const dateJoined = member.joined_at 
+      ? new Date(member.joined_at).toLocaleDateString('fr-FR')
+      : new Date().toLocaleDateString('fr-FR');
+    doc.text('Date : ' + dateJoined, sealX + 13, sec7Y + 33);
+
+    // 11. FOOTER
+    doc.setDrawColor(...borderColor);
+    doc.setLineWidth(0.4);
+    doc.line(margin, pageHeight - 11, pageWidth - margin, pageHeight - 11);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.5);
+    doc.setTextColor(...textMuted);
+    doc.text(`Document officiel d'inscription délivré par le Portail Associatif UPSSA le ${new Date().toLocaleDateString('fr-FR')} - Valable pour l'année 2026-2027.`, margin, pageHeight - 7);
+    doc.text('Page 1/1', pageWidth - margin - 12, pageHeight - 7);
+
+    // Auto Download
+    if (autoDownload && typeof window !== 'undefined') {
+      const sanitizedName = cleanPdfText(member.full_name || 'Etudiant').replace(/[^a-zA-Z0-9]/g, '_');
+      const sanitizedClub = cleanPdfText(club.acronym || club.official_name || 'Club').replace(/[^a-zA-Z0-9]/g, '_');
+      const filename = `Fiche_Inscription_${sanitizedName}_${sanitizedClub}.pdf`;
+      doc.save(filename);
+    }
+
+    return doc;
+  }
+
+  /**
+   * Generates a complete official PDF Register of all registrations for a club.
+   * Includes statistics by faculty/level and full detailed table of all registered students with all their rubrics.
+   */
+  async generateClubMembersListPdf(club: ClubApplication, members: ClubMember[], autoDownload: boolean = true): Promise<jsPDF> {
+    const doc = new jsPDF({
+      orientation: 'landscape',
+      unit: 'mm',
+      format: 'a4'
+    });
+
+    const pageWidth = 297;
+    const pageHeight = 210;
+    const margin = 14;
+    const contentWidth = pageWidth - (margin * 2); // 269mm
+
+    const primaryColor: [number, number, number] = [0, 154, 166];
+    const primaryDark: [number, number, number] = [0, 56, 68];
+    const primaryLight: [number, number, number] = [230, 246, 247];
+    const textDark: [number, number, number] = [15, 23, 42];
+    const textMuted: [number, number, number] = [100, 116, 139];
+    const borderColor: [number, number, number] = [203, 213, 225];
+
+    // Top Bar
+    doc.setFillColor(...primaryColor);
+    doc.rect(0, 0, pageWidth, 5, 'F');
+
+    // Header
+    let y = 14;
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(11);
     doc.setTextColor(...primaryDark);
     doc.text('UNIVERSITÉ PRIVÉE DE LA SANTÉ ET DES SCIENCES D\'AGADIR', margin, y);
 
-    y += 5;
+    y += 4.5;
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8.5);
     doc.setTextColor(...textMuted);
-    doc.text('Pôle de la Vie Associative & Affaires Estudiantines - UPSSA Campus', margin, y);
+    doc.text('Direction de la Vie Étudiante • Registre Général des Inscriptions Associatives 2026-2027', margin, y);
 
-    // Right-aligned header badge
-    doc.setFillColor(...primaryLight);
-    doc.roundedRect(pageWidth - margin - 52, 12, 52, 11, 2, 2, 'F');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7.5);
-    doc.setTextColor(...primaryColor);
-    doc.text('ANNÉE UNIVERSITAIRE', pageWidth - margin - 50, 16.5);
-    doc.setFontSize(8.5);
-    doc.setTextColor(...primaryDark);
-    doc.text('2026 - 2027', pageWidth - margin - 50, 20.5);
-
-    // Thin separator line
+    // Title Box
     y += 6;
-    doc.setDrawColor(...borderColor);
-    doc.setLineWidth(0.5);
-    doc.line(margin, y, pageWidth - margin, y);
-
-    // 3. TITLE BLOCK: OFFICIAL CERTIFICATE
-    y += 8;
     doc.setFillColor(...primaryDark);
     doc.roundedRect(margin, y, contentWidth, 14, 2, 2, 'F');
-    
+
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(12);
     doc.setTextColor(255, 255, 255);
-    doc.text('FICHE D\'INSCRIPTION & CARTE D\'ADHÉRENT DU CLUB', margin + 6, y + 9);
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7.5);
-    doc.setTextColor(165, 243, 252); // soft cyan
-    doc.text('DOCUMENT OFFICIEL ÉTUDIANT', pageWidth - margin - 50, y + 9);
-
-    // 4. CLUB INFORMATIONS BOX
-    y += 18;
-    const clubBoxH = 26;
-    doc.setFillColor(...bgCard);
-    doc.setDrawColor(...borderColor);
-    doc.setLineWidth(0.4);
-    doc.roundedRect(margin, y, contentWidth, clubBoxH, 2, 2, 'FD');
-
-    // Club header line
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11);
-    doc.setTextColor(...primaryDark);
     const safeClubName = cleanPdfText(club.official_name);
     const safeAcronym = cleanPdfText(club.acronym);
-    const clubTitle = `${safeClubName}${safeAcronym ? ' (' + safeAcronym + ')' : ''}`;
-    doc.text(clubTitle, margin + 5, y + 6.5);
+    doc.text(`REGISTRE OFFICIEL DES INSCRIPTIONS • ${safeClubName.toUpperCase()}${safeAcronym ? ' (' + safeAcronym + ')' : ''}`, margin + 6, y + 9);
 
-    // Club Typology Badge
-    doc.setFillColor(...primaryColor);
-    const badgeW = 44;
-    doc.roundedRect(pageWidth - margin - badgeW - 5, y + 2.5, badgeW, 6, 1.5, 1.5, 'F');
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(6.5);
-    doc.setTextColor(255, 255, 255);
-    const safeTypology = cleanPdfText(club.typology).substring(0, 26);
-    doc.text(safeTypology, pageWidth - margin - badgeW - 3, y + 6.5);
-
-    // Club details
-    doc.setFont('helvetica', 'italic');
     doc.setFontSize(8);
-    doc.setTextColor(...textMuted);
-    const safeSlogan = cleanPdfText(club.slogan);
-    const sloganText = safeSlogan ? `"${safeSlogan}"` : cleanPdfText(club.main_mission).substring(0, 85) + '...';
-    doc.text(sloganText, margin + 5, y + 12);
+    doc.setTextColor(165, 243, 252);
+    doc.text(`TOTAL : ${members.length} ÉTUDIANT(S) INSCRIT(S)`, pageWidth - margin - 60, y + 9);
 
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.setTextColor(...textDark);
-    doc.text(`Président(e) : ${cleanPdfText(club.president_name)}`, margin + 5, y + 18);
-    doc.text(`Tuteur Référent : ${cleanPdfText(club.faculty_advisor_name) || 'Dr. Loubna Agouzal'}`, margin + 5, y + 22.5);
-    doc.text(`Statut : Club Agréé par l'Université`, margin + 95, y + 18);
-    doc.text(`Événement Phare : ${cleanPdfText(club.event1_title) || 'Non communiqué'}`, margin + 95, y + 22.5);
-
-    // 5. MEMBER IDENTITY & ACADEMIC DETAILS BOX
-    y += clubBoxH + 4;
-    const memberBoxY = y;
-    const memberBoxH = 92;
-
-    doc.setFillColor(255, 255, 255);
-    doc.setDrawColor(...primaryColor);
-    doc.setLineWidth(0.8);
-    doc.roundedRect(margin, memberBoxY, contentWidth, memberBoxH, 2, 2, 'FD');
-
-    // Section title bar
-    doc.setFillColor(...primaryColor);
-    doc.roundedRect(margin, memberBoxY, contentWidth, 8, 2, 2, 'F');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8.5);
-    doc.setTextColor(255, 255, 255);
-    doc.text('DÉTAILS COMPLETS DE L\'ÉTUDIANT(E) INSCRIT(E)', margin + 5, memberBoxY + 5.5);
-
-    // Left Column: Identity
-    let my = memberBoxY + 14;
-    const col1X = margin + 5;
-    const col2X = margin + 95;
-
-    // Nom et prénom
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7.5);
-    doc.setTextColor(...textMuted);
-    doc.text('NOM & PRÉNOM DE L\'ÉTUDIANT(E) :', col1X, my);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10.5);
-    doc.setTextColor(...primaryDark);
-    doc.text(cleanPdfText(member.full_name) || '—', col1X, my + 4.5);
-
-    // Faculté
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7.5);
-    doc.setTextColor(...textMuted);
-    doc.text('FACULTÉ D\'ÉTUDES :', col1X, my + 11.5);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9.5);
-    doc.setTextColor(...accentColor);
-    doc.text(cleanPdfText(member.filiere) || '—', col1X, my + 16);
-
-    // Année scolaire / Niveau
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7.5);
-    doc.setTextColor(...textMuted);
-    doc.text('ANNÉE SCOLAIRE / NIVEAU :', col1X, my + 23);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9.5);
-    doc.setTextColor(...textDark);
-    doc.text(cleanPdfText(member.academic_year) || '—', col1X, my + 27.5);
-
-    // Right Column: Reference & Contact
-    // Code Adhérent
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7.5);
-    doc.setTextColor(...textMuted);
-    doc.text('IDENTIFIANT D\'ADHÉRENT OFFICIEL :', col2X, my);
+    // Club meta summary strip
+    y += 18;
     doc.setFillColor(...primaryLight);
-    doc.roundedRect(col2X, my + 1, 75, 6, 1, 1, 'F');
-    doc.setFont('courier', 'bold');
-    doc.setFontSize(8.5);
-    doc.setTextColor(...primaryColor);
-    const memberCode = `UPSSA-MBR-${club.id || 1}-${member.id || 'NEW'}`;
-    doc.text(memberCode, col2X + 2, my + 5.2);
+    doc.roundedRect(margin, y, contentWidth, 10, 1.5, 1.5, 'F');
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(...primaryDark);
+    doc.text(`Typologie : ${cleanPdfText(club.typology)}`, margin + 4, y + 6.5);
+    doc.text(`Président(e) : ${cleanPdfText(club.president_name)}`, margin + 80, y + 6.5);
+    doc.text(`Tuteur Référent : ${cleanPdfText(club.faculty_advisor_name) || 'Dr. Loubna Agouzal'}`, margin + 155, y + 6.5);
+    doc.text(`Édité le : ${new Date().toLocaleDateString('fr-FR')}`, margin + 225, y + 6.5);
 
-    // Date d'adhésion
+    // Table Header
+    y += 14;
+    const thY = y;
+    const thH = 8;
+    doc.setFillColor(...primaryDark);
+    doc.rect(margin, thY, contentWidth, thH, 'F');
+
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(7.5);
-    doc.setTextColor(...textMuted);
-    doc.text('DATE OFFICIELLE D\'ADHÉSION :', col2X, my + 11.5);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8.5);
-    doc.setTextColor(...textDark);
-    const joinDateStr = member.joined_at 
-      ? new Date(member.joined_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-      : new Date().toLocaleDateString('fr-FR');
-    doc.text(joinDateStr, col2X, my + 16);
+    doc.setTextColor(255, 255, 255);
 
-    // Contact
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7.5);
-    doc.setTextColor(...textMuted);
-    doc.text('COORDONNÉES DE CONTACT :', col2X, my + 23);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.setTextColor(...textDark);
-    doc.text(`Email : ${cleanPdfText(member.email) || 'Non renseigné'}`, col2X, my + 27.5);
-    doc.text(`Tél : ${cleanPdfText(member.phone) || 'Non renseigné'}`, col2X, my + 31.5);
+    const cols = [
+      { name: 'N°', x: margin + 3, w: 10 },
+      { name: 'Nom & Prénom', x: margin + 14, w: 42 },
+      { name: 'Faculté & Niveau', x: margin + 58, w: 42 },
+      { name: 'Loisirs & Passions', x: margin + 102, w: 45 },
+      { name: 'Compétences Apportées', x: margin + 149, w: 45 },
+      { name: 'Idée de Projet Proposée', x: margin + 196, w: 45 },
+      { name: 'Contact', x: margin + 243, w: 25 }
+    ];
 
-    // Horizontal inner divider
-    const divY = memberBoxY + 49;
-    doc.setDrawColor(...borderColor);
-    doc.setLineWidth(0.3);
-    doc.line(col1X, divY, pageWidth - margin - 5, divY);
+    cols.forEach(c => doc.text(c.name, c.x, thY + 5.5));
 
-    // Survey / Profile Section: Loisirs, Compétences, Idée de Projet
-    let py = divY + 5;
-    
-    // 1. Loisirs (NO EMOJI IN LABEL)
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
-    doc.setTextColor(...primaryColor);
-    doc.text('Loisir(s) & Centres d\'intérêt :', col1X, py);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.setTextColor(...textDark);
-    const cleanLoisir = cleanPdfText(member.loisir) || 'Non renseigné';
-    const loisirLines = doc.splitTextToSize(cleanLoisir, contentWidth - 10);
-    doc.text(loisirLines, col1X, py + 4);
+    // Rows
+    y = thY + thH;
+    let rowIdx = 0;
+    const maxRowsPerPage = 12;
 
-    py += 4 + (loisirLines.length * 3.8);
+    for (const m of members) {
+      if (rowIdx > 0 && rowIdx % maxRowsPerPage === 0) {
+        doc.addPage('a4', 'landscape');
+        // Redraw top bar & header
+        doc.setFillColor(...primaryColor);
+        doc.rect(0, 0, pageWidth, 5, 'F');
+        y = 15;
+        doc.setFillColor(...primaryDark);
+        doc.rect(margin, y, contentWidth, thH, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7.5);
+        doc.setTextColor(255, 255, 255);
+        cols.forEach(c => doc.text(c.name, c.x, y + 5.5));
+        y += thH;
+      }
 
-    // 2. Compétences (NO EMOJI IN LABEL)
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
-    doc.setTextColor(...primaryColor);
-    doc.text('Compétence(s) & Savoir-faire :', col1X, py);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.setTextColor(...textDark);
-    const cleanComp = cleanPdfText(member.competence) || 'Non renseigné';
-    const compLines = doc.splitTextToSize(cleanComp, contentWidth - 10);
-    doc.text(compLines, col1X, py + 4);
+      const rowH = 10;
+      if (rowIdx % 2 === 1) {
+        doc.setFillColor(248, 250, 252);
+        doc.rect(margin, y, contentWidth, rowH, 'F');
+      }
+      doc.setDrawColor(...borderColor);
+      doc.setLineWidth(0.2);
+      doc.line(margin, y + rowH, margin + contentWidth, y + rowH);
 
-    py += 4 + (compLines.length * 3.8);
-
-    // 3. Idée de projet (NO EMOJI IN LABEL)
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
-    doc.setTextColor(...primaryColor);
-    doc.text('Idée de projet proposée pour le club :', col1X, py);
-    doc.setFont('helvetica', 'italic');
-    doc.setFontSize(8);
-    doc.setTextColor(51, 65, 85);
-    const cleanProj = cleanPdfText(member.project_idea);
-    const projText = cleanProj ? `"${cleanProj}"` : 'Aucune idée particulière formulée lors de l\'adhésion.';
-    const projLines = doc.splitTextToSize(projText, contentWidth - 10);
-    doc.text(projLines, col1X, py + 4);
-
-    // 6. OFFICIAL VERIFICATION & QR CODE & SIGNATURES
-    y = memberBoxY + memberBoxH + 4;
-    const sealBoxH = 48;
-    doc.setFillColor(...bgCard);
-    doc.setDrawColor(...borderColor);
-    doc.setLineWidth(0.4);
-    doc.roundedRect(margin, y, contentWidth, sealBoxH, 2, 2, 'FD');
-
-    // Generate Verification QR Code
-    const verifyUrl = typeof window !== 'undefined'
-      ? `${window.location.origin}/rejoindre/${club.id}`
-      : `http://localhost:3000/rejoindre/${club.id}`;
-    
-    try {
-      const qrDataUrl = await QRCode.toDataURL(verifyUrl, {
-        width: 140,
-        margin: 1,
-        color: {
-          dark: '#003844',
-          light: '#ffffff'
-        }
-      });
-      doc.addImage(qrDataUrl, 'PNG', margin + 4, y + 4, 30, 30);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(6.5);
-      doc.setTextColor(...primaryColor);
-      doc.text('SCANNER LE QR CODE', margin + 5, y + 37.5);
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(5.8);
-      doc.setTextColor(...textMuted);
-      doc.text('Vérification en ligne de l\'adhésion', margin + 3.5, y + 41);
-    } catch (e) {
-      console.warn('QR Code generation for PDF failed:', e);
+      doc.setFontSize(7);
+      doc.setTextColor(...textDark);
+
+      // N°
+      doc.text(String(rowIdx + 1), cols[0].x, y + 6);
+
+      // Nom
+      doc.setFont('helvetica', 'bold');
+      doc.text(cleanPdfText(m.full_name).substring(0, 24), cols[1].x, y + 6);
+
+      // Faculté & Niveau
+      doc.setFont('helvetica', 'normal');
+      const facText = `${cleanPdfText(m.filiere)} • ${cleanPdfText(m.academic_year)}`;
+      doc.text(facText.substring(0, 26), cols[2].x, y + 6);
+
+      // Loisir
+      doc.text(cleanPdfText(m.loisir).substring(0, 28), cols[3].x, y + 6);
+
+      // Compétence
+      doc.text(cleanPdfText(m.competence).substring(0, 28), cols[4].x, y + 6);
+
+      // Idée de projet
+      doc.text(cleanPdfText(m.project_idea || '—').substring(0, 28), cols[5].x, y + 6);
+
+      // Contact
+      doc.text(cleanPdfText(m.phone || m.email || '—').substring(0, 16), cols[6].x, y + 6);
+
+      y += rowH;
+      rowIdx++;
     }
 
-    // Signatures & Official Stamp
-    const stampX = margin + 42;
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
-    doc.setTextColor(...primaryDark);
-    doc.text('VALIDATION & ENGAGEMENT ÉTUDIANT', stampX, y + 7);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7.2);
-    doc.setTextColor(...textDark);
-    const engagementText = "Par la présente, l'étudiant(e) adhère officiellement aux statuts et à la charte de vie étudiante de l'UPSSA pour l'année 2026-2027. Ce document atteste de son appartenance au bureau et aux activités du club.";
-    const engLines = doc.splitTextToSize(engagementText, 70);
-    doc.text(engLines, stampX, y + 12);
-
-    // President signature block
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7.5);
-    doc.setTextColor(...textMuted);
-    doc.text('Pour le Club :', stampX, y + 29);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8.5);
-    doc.setTextColor(...primaryDark);
-    doc.text(cleanPdfText(club.president_name), stampX, y + 34);
-    doc.setFont('helvetica', 'italic');
-    doc.setFontSize(7);
-    doc.setTextColor(...textMuted);
-    doc.text('Président(e) en exercice', stampX, y + 38);
-
-    // Official Stamp mockup (Right)
-    const sealX = pageWidth - margin - 60;
-    doc.setDrawColor(...primaryColor);
-    doc.setLineWidth(0.8);
-    doc.roundedRect(sealX, y + 5, 55, 36, 3, 3, 'D');
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7);
-    doc.setTextColor(...primaryColor);
-    doc.text('UPSSA AGADIR - CAMPUS', sealX + 8, y + 11);
-    doc.setDrawColor(...primaryColor);
-    doc.setLineWidth(0.3);
-    doc.line(sealX + 4, y + 13, sealX + 51, y + 13);
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7.5);
-    doc.setTextColor(...primaryDark);
-    doc.text('DIRECTION DE LA', sealX + 11, y + 18);
-    doc.text('VIE ÉTUDIANTE', sealX + 14, y + 22.5);
-
-    doc.setFillColor(...primaryLight);
-    doc.roundedRect(sealX + 6, y + 25, 43, 6, 1, 1, 'F');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(6.5);
-    doc.setTextColor(...primaryColor);
-    doc.text('ADHÉSION VALIDÉE', sealX + 11, y + 29.2);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(6);
-    doc.setTextColor(...textMuted);
-    doc.text('Réf : ' + memberCode, sealX + 11, y + 35);
-
-    // 7. FOOTER
+    // Bottom verification footer
     doc.setDrawColor(...borderColor);
     doc.setLineWidth(0.4);
-    doc.line(margin, pageHeight - 12, pageWidth - margin, pageHeight - 12);
+    doc.line(margin, pageHeight - 10, pageWidth - margin, pageHeight - 10);
 
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7);
+    doc.setFontSize(6.5);
     doc.setTextColor(...textMuted);
-    doc.text(`Document délivré électroniquement par le Portail UPSSA le ${new Date().toLocaleDateString('fr-FR')} - Fait foi pour l'année universitaire en cours.`, margin, pageHeight - 7.5);
-    doc.text('Page 1/1', pageWidth - margin - 12, pageHeight - 7.5);
+    doc.text(`Registre certifié conforme par la Direction de la Vie Étudiante UPSSA • Total : ${members.length} inscription(s) validée(s).`, margin, pageHeight - 6);
+    doc.text('Document officiel UPSSA Campus', pageWidth - margin - 45, pageHeight - 6);
 
-    // Automatic download
     if (autoDownload && typeof window !== 'undefined') {
-      const sanitizedName = cleanPdfText(member.full_name || 'Etudiant').replace(/[^a-zA-Z0-9]/g, '_');
       const sanitizedClub = cleanPdfText(club.acronym || club.official_name || 'Club').replace(/[^a-zA-Z0-9]/g, '_');
-      const filename = `Attestation_Adhesion_${sanitizedName}_${sanitizedClub}.pdf`;
+      const filename = `Registre_Inscriptions_${sanitizedClub}_2026.pdf`;
       doc.save(filename);
     }
 
