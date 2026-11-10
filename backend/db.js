@@ -2,7 +2,23 @@ const { DatabaseSync } = require('node:sqlite');
 const path = require('path');
 const fs = require('fs');
 
-const dbPath = process.env.DB_PATH || path.join(__dirname, 'clubs.db');
+let dbPath = process.env.DB_PATH;
+if (!dbPath) {
+  if (fs.existsSync('/data') && fs.statSync('/data').isDirectory()) {
+    dbPath = '/data/clubs.db';
+    const defaultSeed = path.join(__dirname, 'clubs.db');
+    if (!fs.existsSync(dbPath) && fs.existsSync(defaultSeed)) {
+      try {
+        fs.copyFileSync(defaultSeed, dbPath);
+        console.log('Seeded database copied to /data/clubs.db');
+      } catch (e) {
+        console.warn('Could not copy initial db to /data:', e.message);
+      }
+    }
+  } else {
+    dbPath = path.join(__dirname, 'clubs.db');
+  }
+}
 const dbDir = path.dirname(dbPath);
 if (!fs.existsSync(dbDir)) {
   fs.mkdirSync(dbDir, { recursive: true });

@@ -16,8 +16,12 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Upload directory setup
-const uploadsDir = process.env.UPLOADS_DIR || path.join(__dirname, 'uploads');
+// Upload directory setup (persistent volume support if /data exists)
+let defaultUploads = path.join(__dirname, 'uploads');
+if (fs.existsSync('/data') && fs.statSync('/data').isDirectory()) {
+  defaultUploads = '/data/uploads';
+}
+const uploadsDir = process.env.UPLOADS_DIR || defaultUploads;
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
@@ -182,6 +186,8 @@ app.post('/api/clubs', (req, res) => {
       submissionDate
     );
 
+    try { db.exec('PRAGMA wal_checkpoint(PASSIVE);'); } catch (e) {}
+
     const inserted = db.prepare('SELECT * FROM clubs WHERE id = ?').get(result.lastInsertRowid);
     inserted.funding_sources = JSON.parse(inserted.funding_sources || '[]');
     inserted.additional_members = JSON.parse(inserted.additional_members || '[]');
@@ -258,24 +264,26 @@ app.get('/api/clubs/track/:code', (req, res) => {
   }
 });
 
-// 5. Get Club by ID
+// 5. Get Club by ID or Tracking Code
 app.get('/api/clubs/:id', (req, res) => {
   try {
-    const id = parseInt(req.params.id, 10);
+    const rawParam = req.params.id;
+    const numId = parseInt(rawParam, 10);
+    const idToMatch = isNaN(numId) ? -1 : numId;
     const club = db.prepare(`
       SELECT clubs.*, COALESCE(m.members_count, 0) as members_count
       FROM clubs
       LEFT JOIN (
         SELECT club_id, COUNT(*) as members_count FROM club_members GROUP BY club_id
       ) m ON m.club_id = clubs.id
-      WHERE clubs.id = ?
-    `).get(id);
+      WHERE clubs.id = ? OR UPPER(clubs.tracking_code) = UPPER(?)
+    `).get(idToMatch, rawParam);
     if (!club) {
       return res.status(404).json({ error: 'Club introuvable.' });
     }
     club.funding_sources = JSON.parse(club.funding_sources || '[]');
     club.additional_members = JSON.parse(club.additional_members || '[]');
-    club.members = db.prepare('SELECT * FROM club_members WHERE club_id = ? ORDER BY joined_at DESC').all(id);
+    club.members = db.prepare('SELECT * FROM club_members WHERE club_id = ? ORDER BY joined_at DESC').all(club.id);
     res.json(club);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -285,8 +293,10 @@ app.get('/api/clubs/:id', (req, res) => {
 // 5b. Add Club Member (Student Join Registration)
 app.post('/api/clubs/:id/members', (req, res) => {
   try {
-    const clubId = parseInt(req.params.id, 10);
-    const club = db.prepare('SELECT id, official_name, acronym FROM clubs WHERE id = ?').get(clubId);
+    const rawParam = req.params.id;
+    const numId = parseInt(rawParam, 10);
+    const idToMatch = isNaN(numId) ? -1 : numId;
+    const club = db.prepare('SELECT id, official_name, acronym FROM clubs WHERE id = ? OR UPPER(tracking_code) = UPPER(?)').get(idToMatch, rawParam);
     if (!club) {
       return res.status(404).json({ error: 'Club introuvable.' });
     }
@@ -306,7 +316,7 @@ app.post('/api/clubs/:id/members', (req, res) => {
     const combined = `${loisir.trim()} | ${competence.trim()}`;
 
     const result = stmt.run(
-      clubId,
+      club.id,
       full_name.trim(),
       filiere.trim(),
       academic_year.trim(),
@@ -318,8 +328,10 @@ app.post('/api/clubs/:id/members', (req, res) => {
       phone ? phone.trim() : null
     );
 
+    try { db.exec('PRAGMA wal_checkpoint(PASSIVE);'); } catch (e) {}
+
     const member = db.prepare('SELECT * FROM club_members WHERE id = ?').get(result.lastInsertRowid);
-    const totalMembers = db.prepare('SELECT COUNT(*) as count FROM club_members WHERE club_id = ?').get(clubId).count;
+    const totalMembers = db.prepare('SELECT COUNT(*) as count FROM club_members WHERE club_id = ?').get(club.id).count;
 
     res.status(201).json({
       success: true,
@@ -336,8 +348,14 @@ app.post('/api/clubs/:id/members', (req, res) => {
 // 5c. List Club Members
 app.get('/api/clubs/:id/members', (req, res) => {
   try {
-    const clubId = parseInt(req.params.id, 10);
-    const members = db.prepare('SELECT * FROM club_members WHERE club_id = ? ORDER BY joined_at DESC').all(clubId);
+    const rawParam = req.params.id;
+    const numId = parseInt(rawParam, 10);
+    const idToMatch = isNaN(numId) ? -1 : numId;
+    const club = db.prepare('SELECT id FROM clubs WHERE id = ? OR UPPER(tracking_code) = UPPER(?)').get(idToMatch, rawParam);
+    if (!club) {
+      return res.json([]);
+    }
+    const members = db.prepare('SELECT * FROM club_members WHERE club_id = ? ORDER BY joined_at DESC').all(club.id);
     res.json(members);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -347,7 +365,9 @@ app.get('/api/clubs/:id/members', (req, res) => {
 // 6. Update Club Status & Validation Notes
 app.patch('/api/clubs/:id/status', (req, res) => {
   try {
-    const id = parseInt(req.params.id, 10);
+    const rawParam = req.params.id;
+    const numId = parseInt(rawParam, 10);
+    const idToMatch = isNaN(numId) ? -1 : numId;
     const { status, admin_notes, reviewed_by } = req.body;
 
     const validStatuses = ['SOUMIS', 'EN_COURS_DE_REVUE', 'APPROUVE', 'REFUSE', 'RETOUCHE_DEMANDEE'];
@@ -360,16 +380,18 @@ app.patch('/api/clubs/:id/status', (req, res) => {
     const stmt = db.prepare(`
       UPDATE clubs
       SET status = ?, admin_notes = ?, reviewed_at = ?, reviewed_by = ?, updated_at = datetime('now')
-      WHERE id = ?
+      WHERE id = ? OR UPPER(tracking_code) = UPPER(?)
     `);
 
-    const result = stmt.run(status, admin_notes || '', reviewedAt, reviewed_by || 'Commission Vie Étudiante', id);
+    const result = stmt.run(status, admin_notes || '', reviewedAt, reviewed_by || 'Commission Vie Étudiante', idToMatch, rawParam);
 
     if (result.changes === 0) {
       return res.status(404).json({ error: 'Dossier introuvable.' });
     }
 
-    const updated = db.prepare('SELECT * FROM clubs WHERE id = ?').get(id);
+    try { db.exec('PRAGMA wal_checkpoint(PASSIVE);'); } catch (e) {}
+
+    const updated = db.prepare('SELECT * FROM clubs WHERE id = ? OR UPPER(tracking_code) = UPPER(?)').get(idToMatch, rawParam);
     updated.funding_sources = JSON.parse(updated.funding_sources || '[]');
     updated.additional_members = JSON.parse(updated.additional_members || '[]');
 
@@ -386,8 +408,10 @@ app.patch('/api/clubs/:id/status', (req, res) => {
 // 6b. Update Full Club Information
 app.put('/api/clubs/:id', (req, res) => {
   try {
-    const id = parseInt(req.params.id, 10);
-    const existing = db.prepare('SELECT * FROM clubs WHERE id = ?').get(id);
+    const rawParam = req.params.id;
+    const numId = parseInt(rawParam, 10);
+    const idToMatch = isNaN(numId) ? -1 : numId;
+    const existing = db.prepare('SELECT * FROM clubs WHERE id = ? OR UPPER(tracking_code) = UPPER(?)').get(idToMatch, rawParam);
     if (!existing) {
       return res.status(404).json({ error: 'Club introuvable.' });
     }
@@ -488,10 +512,12 @@ app.put('/api/clubs/:id', (req, res) => {
       b.annual_budget_mad !== undefined ? parseFloat(b.annual_budget_mad) : null,
       fundingSourcesStr,
       b.facility_needs !== undefined ? b.facility_needs : null,
-      id
+      existing.id
     );
 
-    const updated = db.prepare('SELECT * FROM clubs WHERE id = ?').get(id);
+    try { db.exec('PRAGMA wal_checkpoint(PASSIVE);'); } catch (e) {}
+
+    const updated = db.prepare('SELECT * FROM clubs WHERE id = ?').get(existing.id);
     updated.funding_sources = JSON.parse(updated.funding_sources || '[]');
     updated.additional_members = JSON.parse(updated.additional_members || '[]');
 
@@ -509,11 +535,14 @@ app.put('/api/clubs/:id', (req, res) => {
 // 7. Delete Club
 app.delete('/api/clubs/:id', (req, res) => {
   try {
-    const id = parseInt(req.params.id, 10);
-    const result = db.prepare('DELETE FROM clubs WHERE id = ?').run(id);
+    const rawParam = req.params.id;
+    const numId = parseInt(rawParam, 10);
+    const idToMatch = isNaN(numId) ? -1 : numId;
+    const result = db.prepare('DELETE FROM clubs WHERE id = ? OR UPPER(tracking_code) = UPPER(?)').run(idToMatch, rawParam);
     if (result.changes === 0) {
       return res.status(404).json({ error: 'Dossier introuvable.' });
     }
+    try { db.exec('PRAGMA wal_checkpoint(PASSIVE);'); } catch (e) {}
     res.json({ success: true, message: 'Dossier supprimé.' });
   } catch (err) {
     res.status(500).json({ error: err.message });

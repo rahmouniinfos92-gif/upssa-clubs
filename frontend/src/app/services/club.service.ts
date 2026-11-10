@@ -30,7 +30,7 @@ export class ClubService {
     return this.http.get<ClubApplication[]>(`${this.apiUrl}/clubs`, { params });
   }
 
-  getClubById(id: number): Observable<ClubApplication> {
+  getClubById(id: number | string): Observable<ClubApplication> {
     return this.http.get<ClubApplication>(`${this.apiUrl}/clubs/${id}`);
   }
 
@@ -38,32 +38,32 @@ export class ClubService {
     return this.http.get<ClubApplication>(`${this.apiUrl}/clubs/track/${encodeURIComponent(code)}`);
   }
 
-  updateStatus(id: number, status: ClubStatus, admin_notes: string, reviewed_by: string): Observable<{ success: boolean; club: ClubApplication }> {
+  updateStatus(id: number | string, status: ClubStatus, admin_notes: string, reviewed_by: string): Observable<{ success: boolean; club: ClubApplication }> {
     return this.http.patch<{ success: boolean; club: ClubApplication }>(
       `${this.apiUrl}/clubs/${id}/status`,
       { status, admin_notes, reviewed_by }
     );
   }
 
-  updateClub(id: number, club: Partial<ClubApplication>): Observable<{ success: boolean; message: string; club: ClubApplication }> {
+  updateClub(id: number | string, club: Partial<ClubApplication>): Observable<{ success: boolean; message: string; club: ClubApplication }> {
     return this.http.put<{ success: boolean; message: string; club: ClubApplication }>(
       `${this.apiUrl}/clubs/${id}`,
       club
     );
   }
 
-  deleteClub(id: number): Observable<{ success: boolean; message: string }> {
+  deleteClub(id: number | string): Observable<{ success: boolean; message: string }> {
     return this.http.delete<{ success: boolean; message: string }>(`${this.apiUrl}/clubs/${id}`);
   }
 
-  addMember(clubId: number, member: Partial<ClubMember>): Observable<{ success: boolean; message: string; member: ClubMember; total_members: number }> {
+  addMember(clubId: number | string, member: Partial<ClubMember>): Observable<{ success: boolean; message: string; member: ClubMember; total_members: number }> {
     return this.http.post<{ success: boolean; message: string; member: ClubMember; total_members: number }>(
       `${this.apiUrl}/clubs/${clubId}/members`,
       member
     );
   }
 
-  getMembers(clubId: number): Observable<ClubMember[]> {
+  getMembers(clubId: number | string): Observable<ClubMember[]> {
     return this.http.get<ClubMember[]>(`${this.apiUrl}/clubs/${clubId}/members`);
   }
 

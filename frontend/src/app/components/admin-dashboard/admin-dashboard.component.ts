@@ -85,10 +85,17 @@ export class AdminDashboardComponent implements OnInit {
     this.reviewerName = club.reviewed_by || 'Commission de la Vie Étudiante';
     this.successNotice = '';
 
-    if (club.id) {
-      this.clubService.getClubById(club.id).subscribe({
+    const targetId = club.id || club.tracking_code;
+    if (targetId) {
+      this.clubService.getClubById(targetId).subscribe({
         next: (fullClub) => {
           this.selectedClub = fullClub;
+          if (fullClub.status) {
+            this.reviewStatus = fullClub.status;
+          }
+        },
+        error: (err) => {
+          console.warn('Could not load full club details, using summary:', err);
         }
       });
     }
@@ -100,11 +107,13 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   saveDecision(): void {
-    if (!this.selectedClub || !this.selectedClub.id) return;
+    if (!this.selectedClub) return;
+    const targetId = this.selectedClub.id || this.selectedClub.tracking_code;
+    if (!targetId) return;
 
     this.isUpdating = true;
     this.clubService.updateStatus(
-      this.selectedClub.id,
+      targetId,
       this.reviewStatus,
       this.reviewNotes,
       this.reviewerName
@@ -145,15 +154,16 @@ export class AdminDashboardComponent implements OnInit {
     }
   }
 
-  deleteApplication(id?: number): void {
-    if (!id) return;
+  deleteApplication(id?: number | string): void {
+    const targetId = id || this.selectedClub?.id || this.selectedClub?.tracking_code;
+    if (!targetId) return;
     if (confirm('Êtes-vous sûr de vouloir supprimer définitivement ce dossier ?')) {
-      this.clubService.deleteClub(id).subscribe({
+      this.clubService.deleteClub(targetId).subscribe({
         next: () => {
           this.closeModal();
           this.loadData();
         },
-        error: (err) => alert('Erreur lors de la suppression : ' + err.message)
+        error: (err) => alert('Erreur lors de la suppression : ' + (err.error?.error || err.message))
       });
     }
   }
