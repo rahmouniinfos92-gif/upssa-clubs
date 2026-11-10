@@ -1,9 +1,13 @@
 # fly.toml app configuration file for UPSSA Club Portal
 app = "upssa-clubs"
-primary_region = "cdg"
+primary_region = "ams"
 
 [build]
   dockerfile = "Dockerfile"
+
+[env]
+  PORT = "3000"
+  NODE_ENV = "production"
 
 [http_service]
   internal_port = 3000
@@ -11,11 +15,6 @@ primary_region = "cdg"
   auto_stop_machines = "stop"
   auto_start_machines = true
   min_machines_running = 1
-  processes = ["app"]
-
-[env]
-  PORT = "3000"
-  NODE_ENV = "production"
 
 [[vm]]
   memory = "512mb"

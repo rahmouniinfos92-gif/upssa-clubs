@@ -568,6 +568,6 @@ if (fs.existsSync(clientDistPath)) {
   });
 }
 
-app.listen(PORT, () => {
-  console.log(`Backend Club Portal running on http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Backend Club Portal running on http://0.0.0.0:${PORT}`);
 });
