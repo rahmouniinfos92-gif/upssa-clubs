@@ -8,7 +8,10 @@
         <h1 class="page-title">Commission de Validation des Clubs</h1>
         <p class="page-desc">Instruction, examen collégial et agrément des nouveaux clubs étudiants.</p>
       </div>
-      <div class="admin-top-actions">
+      <div class="admin-top-actions" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+        <button type="button" class="btn btn-outline" (click)="downloadPaperFormPdf()" title="Télécharger le formulaire officiel de création de club au format papier à imprimer">
+          📄 Formulaire Papier (PDF)
+        </button>
         <button type="button" class="btn btn-secondary" (click)="loadData()">
           🔄 Actualiser
         </button>

@@ -70,6 +70,59 @@
   color: var(--primary);
 }
 
+/* ================= BANDEAU DOSSIER PAPIER ================= */
+.paper-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.75rem;
+  background: linear-gradient(135deg, #f0fdfa 0%, #ffffff 100%);
+  border: 1px solid #99f6e4;
+  border-left: 5px solid var(--primary);
+  border-radius: var(--radius-md);
+  margin-bottom: 2rem;
+  gap: 1.5rem;
+  box-shadow: var(--shadow-sm);
+  flex-wrap: wrap;
+}
+
+.paper-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 1.15rem;
+  flex: 1;
+  min-width: 280px;
+}
+
+.paper-banner-icon {
+  font-size: 2.2rem;
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  border: 1px solid #ccfbf1;
+  border-radius: 14px;
+  box-shadow: var(--shadow-sm);
+  flex-shrink: 0;
+}
+
+.paper-banner-content strong {
+  display: block;
+  font-size: 1rem;
+  color: var(--secondary);
+  margin-bottom: 0.25rem;
+  font-weight: 700;
+}
+
+.paper-banner-content p {
+  margin: 0;
+  font-size: 0.88rem;
+  color: #475569;
+  line-height: 1.45;
+}
+
 /* ================= TIMELINE / STEPPER COMPONENT ================= */
 .stepper-timeline-card {
   padding: 1.5rem 2rem 1.75rem;

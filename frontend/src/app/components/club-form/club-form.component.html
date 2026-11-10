@@ -14,10 +14,29 @@
         </p>
       </div>
       <div class="header-actions">
+        <button type="button" class="btn btn-outline" (click)="downloadPaperFormPdf()" [disabled]="isGeneratingPaperPdf" title="Télécharger le dossier officiel vierge prêt à imprimer pour le remplir à la main">
+          <span>📄</span> {{ isGeneratingPaperPdf ? 'Téléchargement...' : 'Formulaire Papier (PDF)' }}
+        </button>
         <button type="button" class="btn btn-outline demo-btn" (click)="fillDemoData()">
           <span>⚡</span> Pré-remplir un exemple complet
         </button>
       </div>
+    </div>
+
+    <!-- BANDEAU : DOSSIER PAPIER PRÉPARATOIRE À REMPLIR MANUSCRITEMENT -->
+    <div class="paper-banner card mb-4" *ngIf="!submissionSuccess">
+      <div class="paper-banner-content">
+        <div class="paper-banner-icon">📝</div>
+        <div>
+          <strong>Vous souhaitez préparer votre dossier au format papier ?</strong>
+          <p>
+            Téléchargez le <strong>Dossier Officiel Papier Préparatoire (PDF A4)</strong> pour le remplir à la main lors de vos réunions avec vos membres fondateurs et votre tuteur enseignant référent avant de soumettre la version électronique.
+          </p>
+        </div>
+      </div>
+      <button type="button" class="btn btn-primary btn-sm" (click)="downloadPaperFormPdf()" [disabled]="isGeneratingPaperPdf">
+        <span>📥</span> {{ isGeneratingPaperPdf ? 'Génération...' : 'Télécharger le Dossier Papier (PDF)' }}
+      </button>
     </div>
 
     <!-- SUCCESS SCREEN -->

@@ -1286,4 +1286,490 @@ export class PdfService {
 
     return doc;
   }
+
+  /**
+   * Generates an official, printable blank paper dossier for Student Club Creation Application.
+   * ("Dossier Papier Préparatoire de Demande de Création de Club Étudiant")
+   * Formatted as a high-quality 2-page A4 document designed to be printed, filled out by hand with a pen
+   * by the founding committee and faculty advisor, and then transcribed to the online portal.
+   */
+  async generateBlankClubCreationFormPdf(autoDownload: boolean = true): Promise<jsPDF> {
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
+    });
+
+    const pageWidth = 210;
+    const pageHeight = 297;
+    const margin = 13;
+    const contentWidth = pageWidth - (margin * 2); // 184mm
+
+    // Palette
+    const primaryColor: [number, number, number] = [0, 154, 166];      // #009aa6
+    const primaryDark: [number, number, number] = [0, 56, 68];         // #003844
+    const primaryLight: [number, number, number] = [230, 246, 247];    // #e6f6f7
+    const accentColor: [number, number, number] = [2, 128, 144];       // #028090
+    const textDark: [number, number, number] = [15, 23, 42];           // #0f172a
+    const textMuted: [number, number, number] = [100, 116, 139];       // #64748b
+    const borderColor: [number, number, number] = [203, 213, 225];     // #cbd5e1
+    const bgCard: [number, number, number] = [248, 250, 252];          // #f8fafc
+
+    // Helper: draw section bar
+    const drawSectionBar = (title: string, topY: number, height: number = 6.5) => {
+      doc.setFillColor(...primaryLight);
+      doc.roundedRect(margin, topY, contentWidth, height, 1.5, 1.5, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(...primaryDark);
+      doc.text(title, margin + 4, topY + 4.5);
+    };
+
+    // Helper: draw dotted line for handwriting
+    const drawDottedLine = (x1: number, yLine: number, x2: number) => {
+      doc.setDrawColor(...borderColor);
+      doc.setLineWidth(0.3);
+      doc.setLineDashPattern([1, 1], 0);
+      doc.line(x1, yLine, x2, yLine);
+      doc.setLineDashPattern([], 0); // reset
+    };
+
+    // Helper: draw checkbox with label
+    const drawCheckbox = (x: number, yBox: number, label: string) => {
+      doc.setDrawColor(...primaryDark);
+      doc.setLineWidth(0.4);
+      doc.rect(x, yBox, 3.4, 3.4, 'S');
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.setTextColor(...textDark);
+      doc.text(label, x + 5, yBox + 2.8);
+    };
+
+    // =========================================================================
+    //                               PAGE 1 (RECTO)
+    // =========================================================================
+
+    // Top accent bar
+    doc.setFillColor(...primaryColor);
+    doc.rect(0, 0, pageWidth, 5, 'F');
+
+    // Header Branding
+    let y = 12;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10.5);
+    doc.setTextColor(...primaryDark);
+    doc.text("UNIVERSITÉ PRIVÉE DE LA SANTÉ ET DES SCIENCES D'AGADIR", margin, y);
+
+    y += 4.5;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(...textMuted);
+    doc.text("Pôle de la Vie Associative & Affaires Estudiantines • Campus UPSSA Agadir", margin, y);
+
+    // Right badge
+    doc.setFillColor(...primaryLight);
+    doc.roundedRect(pageWidth - margin - 52, 9, 52, 11, 2, 2, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6.5);
+    doc.setTextColor(...primaryColor);
+    doc.text("VERSION PAPIER PRÉPARATOIRE", pageWidth - margin - 50, 13.5);
+    doc.setFontSize(8);
+    doc.setTextColor(...primaryDark);
+    doc.text("ANNÉE 2026 - 2027", pageWidth - margin - 50, 17.5);
+
+    // Thin separator
+    y += 5.5;
+    doc.setDrawColor(...borderColor);
+    doc.setLineWidth(0.4);
+    doc.line(margin, y, pageWidth - margin, y);
+
+    // Main Title Block
+    y += 5;
+    doc.setFillColor(...primaryDark);
+    doc.roundedRect(margin, y, contentWidth, 13, 2, 2, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(255, 255, 255);
+    doc.text("DOSSIER DE CRÉATION DE CLUB ÉTUDIANT (FORMAT PAPIER)", margin + 6, y + 8.5);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(165, 243, 252);
+    doc.text("À REMPLIR MANUSCRITEMENT", pageWidth - margin - 50, y + 8.5);
+
+    // Instruction Box
+    y += 16;
+    doc.setFillColor(...bgCard);
+    doc.setDrawColor(...borderColor);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(margin, y, contentWidth, 12, 1.5, 1.5, 'FD');
+
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(7.2);
+    doc.setTextColor(...textDark);
+    const introNote = "Ce formulaire préparatoire papier est conçu pour concevoir votre projet associatif lors de vos réunions avec le bureau fondateur et votre tuteur référent. Remplissez chaque rubrique au stylo, puis transcrivez les éléments sur le portail en ligne : https://upssa-clubs.fly.dev/creer-club";
+    const introLines = doc.splitTextToSize(introNote, contentWidth - 8);
+    doc.text(introLines, margin + 4, y + 4.5);
+
+    // SECTION 1: IDENTITÉ & TYPOLOGIE DU CLUB
+    y += 15.5;
+    const sec1Y = y;
+    const sec1H = 34;
+    doc.setFillColor(255, 255, 255);
+    doc.setDrawColor(...borderColor);
+    doc.setLineWidth(0.4);
+    doc.roundedRect(margin, sec1Y, contentWidth, sec1H, 2, 2, 'FD');
+    drawSectionBar("1. IDENTITÉ & CATÉGORISATION DU CLUB EN PROJET", sec1Y);
+
+    // Nom officiel
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(...primaryDark);
+    doc.text("NOM OFFICIEL SOUHAITÉ DU CLUB :", margin + 4, sec1Y + 11.5);
+    drawDottedLine(margin + 62, sec1Y + 11.5, pageWidth - margin - 4);
+
+    // Sigle & Slogan
+    doc.text("SIGLE / ACRONYME :", margin + 4, sec1Y + 18.5);
+    drawDottedLine(margin + 36, sec1Y + 18.5, margin + 70);
+
+    doc.text("SLOGAN / DEVISE DU CLUB :", margin + 74, sec1Y + 18.5);
+    drawDottedLine(margin + 119, sec1Y + 18.5, pageWidth - margin - 4);
+
+    // Typologies (Checkboxes)
+    doc.text("TYPOLOGIE THÉMATIQUE (cocher la catégorie principale) :", margin + 4, sec1Y + 25);
+    drawCheckbox(margin + 4, sec1Y + 28, "Académique / Médical");
+    drawCheckbox(margin + 46, sec1Y + 28, "Culturel & Artistique");
+    drawCheckbox(margin + 88, sec1Y + 28, "Sport & Bien-être");
+    drawCheckbox(margin + 128, sec1Y + 28, "Citoyenneté & RSE");
+    drawCheckbox(margin + 164, sec1Y + 28, "Autre");
+
+    // SECTION 2: BUREAU EXÉCUTIF FONDATEUR (5 MEMBRES OBLIGATOIRES)
+    y += sec1H + 3.5;
+    const sec2Y = y;
+    const sec2H = 92;
+    doc.setFillColor(255, 255, 255);
+    doc.setDrawColor(...borderColor);
+    doc.setLineWidth(0.4);
+    doc.roundedRect(margin, sec2Y, contentWidth, sec2H, 2, 2, 'FD');
+    drawSectionBar("2. BUREAU EXÉCUTIF FONDATEUR (5 POSTES CLÉS OBLIGATOIRES)", sec2Y);
+
+    const roles = [
+      { role: "1. PRÉSIDENT(E) DU CLUB (Porteur officiel du dossier)", req: "(Obligatoire)" },
+      { role: "2. VICE-PRÉSIDENT(E)", req: "(Obligatoire)" },
+      { role: "3. SECRÉTAIRE GÉNÉRAL(E)", req: "(Obligatoire)" },
+      { role: "4. TRÉSORIER(E)", req: "(Obligatoire)" },
+      { role: "5. RESPONSABLE COMMUNICATION & ÉVÉNEMENTS", req: "(Obligatoire)" }
+    ];
+
+    let ry = sec2Y + 8.5;
+    roles.forEach((r, idx) => {
+      doc.setFillColor(idx % 2 === 0 ? 250 : 255, idx % 2 === 0 ? 250 : 255, idx % 2 === 0 ? 252 : 255);
+      doc.rect(margin + 1, ry, contentWidth - 2, 16, 'F');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.5);
+      doc.setTextColor(...primaryDark);
+      doc.text(r.role, margin + 4, ry + 4.5);
+      doc.setFont('helvetica', 'italic');
+      doc.setFontSize(6.5);
+      doc.setTextColor(...primaryColor);
+      doc.text(r.req, pageWidth - margin - 22, ry + 4.5);
+
+      // Line 1: Nom & Faculté & Année
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      doc.setTextColor(...textDark);
+      doc.text("Nom & Prénom :", margin + 4, ry + 9.5);
+      drawDottedLine(margin + 26, ry + 9.5, margin + 92);
+
+      doc.text("Faculté :", margin + 95, ry + 9.5);
+      doc.text("[ ] Santé   [ ] Ingénierie   [ ] Business", margin + 110, ry + 9.5);
+
+      doc.text("Année :", margin + 162, ry + 9.5);
+      doc.text("[ ] 1A  [ ] 2A  [ ] 3A  [ ] 4A", margin + 172, ry + 9.5);
+
+      // Line 2: Email & Téléphone
+      doc.text("Email Univ. (@upssa.ac.ma) :", margin + 4, ry + 14.5);
+      drawDottedLine(margin + 44, ry + 14.5, margin + 110);
+
+      doc.text("Téléphone / WhatsApp :", margin + 115, ry + 14.5);
+      drawDottedLine(margin + 150, ry + 14.5, pageWidth - margin - 4);
+
+      ry += 16.5;
+    });
+
+    // SECTION 3: TUTEUR ENSEIGNANT RÉFÉRENT
+    y += sec2H + 3.5;
+    const sec3Y = y;
+    const sec3H = 22;
+    doc.setFillColor(...bgCard);
+    doc.setDrawColor(...borderColor);
+    doc.setLineWidth(0.4);
+    doc.roundedRect(margin, sec3Y, contentWidth, sec3H, 2, 2, 'FD');
+    drawSectionBar("3. TUTEUR ENSEIGNANT RÉFÉRENT (ACCOMPAGNEMENT PÉDAGOGIQUE)", sec3Y);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(...primaryDark);
+    doc.text("NOM DU TUTEUR ENSEIGNANT (Référent UPSSA) :", margin + 4, sec3Y + 11.5);
+    doc.setFont('helvetica', 'normal');
+    doc.text("Dr. Loubna Agouzal (ou autre enseignant(e) UPSSA) :", margin + 74, sec3Y + 11.5);
+    drawDottedLine(margin + 144, sec3Y + 11.5, pageWidth - margin - 4);
+
+    doc.setFont('helvetica', 'bold');
+    doc.text("ACCORD DE PRINCIPE DU TUTEUR :", margin + 4, sec3Y + 17.5);
+    drawCheckbox(margin + 62, sec3Y + 15, "Accord formel obtenu");
+    drawCheckbox(margin + 104, sec3Y + 15, "Démarche de parrainage en cours");
+
+    doc.setFont('helvetica', 'bold');
+    doc.text("VISA / SIGNATURE :", margin + 155, sec3Y + 17.5);
+    doc.rect(pageWidth - margin - 22, sec3Y + 13.5, 18, 7, 'S');
+
+    // Bottom Footer of Page 1
+    doc.setDrawColor(...borderColor);
+    doc.setLineWidth(0.3);
+    doc.line(margin, pageHeight - 9, pageWidth - margin, pageHeight - 9);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.5);
+    doc.setTextColor(...textMuted);
+    doc.text("Portail de Création des Clubs UPSSA • Tournez la page pour la Vision, le Plan d'Action, le Budget et les Signatures →", margin, pageHeight - 5.5);
+    doc.text("Page 1 / 2", pageWidth - margin - 14, pageHeight - 5.5);
+
+    // =========================================================================
+    //                               PAGE 2 (VERSO)
+    // =========================================================================
+    doc.addPage('a4', 'portrait');
+
+    // Top accent bar
+    doc.setFillColor(...primaryColor);
+    doc.rect(0, 0, pageWidth, 5, 'F');
+
+    // Header reminder
+    y = 12;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9.5);
+    doc.setTextColor(...primaryDark);
+    doc.text("UPSSA • DOSSIER DE CRÉATION DE CLUB ÉTUDIANT (SUITE)", margin, y);
+
+    y += 4;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(...textMuted);
+    doc.text("Rappel Nom du Club :", margin, y);
+    drawDottedLine(margin + 32, y, margin + 120);
+    doc.text("Année Universitaire : 2026 - 2027", pageWidth - margin - 46, y);
+
+    y += 4;
+    doc.setDrawColor(...borderColor);
+    doc.setLineWidth(0.4);
+    doc.line(margin, y, pageWidth - margin, y);
+
+    // SECTION 4: VISION, OBJECTIFS MESURABLES & VALEUR AJOUTÉE
+    y += 4.5;
+    const sec4Y = y;
+    const sec4H = 58;
+    doc.setFillColor(255, 255, 255);
+    doc.setDrawColor(...borderColor);
+    doc.setLineWidth(0.4);
+    doc.roundedRect(margin, sec4Y, contentWidth, sec4H, 2, 2, 'FD');
+    drawSectionBar("4. VISION, OBJECTIFS MESURABLES & VALEUR AJOUTÉE POUR LE CAMPUS", sec4Y);
+
+    // Mission
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(...primaryDark);
+    doc.text("MISSION PRINCIPALE & RAISON D'ÊTRE DU CLUB (Vocation générale, impact visé) :", margin + 4, sec4Y + 11.5);
+    drawDottedLine(margin + 4, sec4Y + 16, pageWidth - margin - 4);
+    drawDottedLine(margin + 4, sec4Y + 21, pageWidth - margin - 4);
+    drawDottedLine(margin + 4, sec4Y + 26, pageWidth - margin - 4);
+
+    // Objectifs mesurables
+    doc.setFont('helvetica', 'bold');
+    doc.text("OBJECTIFS MESURABLES POUR L'ANNÉE 2026-2027 (Ex: nb d'ateliers, conférences, adhérents) :", margin + 4, sec4Y + 31.5);
+    drawDottedLine(margin + 4, sec4Y + 36, pageWidth - margin - 4);
+    drawDottedLine(margin + 4, sec4Y + 41, pageWidth - margin - 4);
+
+    // Valeur ajoutée & Public cible
+    doc.setFont('helvetica', 'bold');
+    doc.text("VALEUR AJOUTÉE POUR LA VIE ÉTUDIANTE :", margin + 4, sec4Y + 46.5);
+    drawDottedLine(margin + 65, sec4Y + 46.5, pageWidth - margin - 4);
+    drawDottedLine(margin + 4, sec4Y + 51.5, pageWidth - margin - 4);
+
+    doc.setFont('helvetica', 'bold');
+    doc.text("PUBLIC CIBLE :", margin + 4, sec4Y + 55.5);
+    drawCheckbox(margin + 28, sec4Y + 53, "Ouvert à toute l'université");
+    drawCheckbox(margin + 74, sec4Y + 53, "Faculté Santé");
+    drawCheckbox(margin + 110, sec4Y + 53, "Faculté Ingénierie");
+    drawCheckbox(margin + 148, sec4Y + 53, "Business School");
+
+    // SECTION 5: PLAN D'ACTION ANNUEL PRÉVISIONNEL
+    y += sec4H + 3.5;
+    const sec5Y = y;
+    const sec5H = 48;
+    doc.setFillColor(255, 255, 255);
+    doc.setDrawColor(...borderColor);
+    doc.setLineWidth(0.4);
+    doc.roundedRect(margin, sec5Y, contentWidth, sec5H, 2, 2, 'FD');
+    drawSectionBar("5. PLAN D'ACTION ANNUEL PRÉVISIONNEL (2 ÉVÉNEMENTS PHARES EXIGÉS)", sec5Y);
+
+    // Event 1
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(...primaryDark);
+    doc.text("ÉVÉNEMENT PHARE 1 (Semestre 1 - Automne / Hiver) :", margin + 4, sec5Y + 11.5);
+    doc.setFont('helvetica', 'normal');
+    doc.text("Titre :", margin + 4, sec5Y + 16.5);
+    drawDottedLine(margin + 14, sec5Y + 16.5, margin + 110);
+    doc.text("Date prévisionnelle :", margin + 115, sec5Y + 16.5);
+    drawDottedLine(margin + 145, sec5Y + 16.5, pageWidth - margin - 4);
+
+    doc.text("Descriptif succinct & Besoins (Amphi, Sono, Stands, Matériel) :", margin + 4, sec5Y + 21.5);
+    drawDottedLine(margin + 4, sec5Y + 26.5, pageWidth - margin - 4);
+
+    // Event 2
+    doc.setFont('helvetica', 'bold');
+    doc.text("ÉVÉNEMENT PHARE 2 (Semestre 2 - Printemps) :", margin + 4, sec5Y + 31.5);
+    doc.setFont('helvetica', 'normal');
+    doc.text("Titre :", margin + 4, sec5Y + 36.5);
+    drawDottedLine(margin + 14, sec5Y + 36.5, margin + 110);
+    doc.text("Date prévisionnelle :", margin + 115, sec5Y + 36.5);
+    drawDottedLine(margin + 145, sec5Y + 36.5, pageWidth - margin - 4);
+
+    doc.text("Descriptif succinct :", margin + 4, sec5Y + 41.5);
+    drawDottedLine(margin + 34, sec5Y + 41.5, pageWidth - margin - 4);
+
+    // Fréquence réunions
+    doc.setFont('helvetica', 'bold');
+    doc.text("FRÉQUENCE PRÉVISIONNELLE DES RÉUNIONS INTERNES :", margin + 4, sec5Y + 46);
+    drawCheckbox(margin + 85, sec5Y + 43.5, "Hebdomadaire");
+    drawCheckbox(margin + 120, sec5Y + 43.5, "Bimensuel (2x / mois)");
+    drawCheckbox(margin + 160, sec5Y + 43.5, "Mensuel");
+
+    // SECTION 6: ESTIMATION BUDGÉTAIRE & RESSOURCES
+    y += sec5H + 3.5;
+    const sec6Y = y;
+    const sec6H = 26;
+    doc.setFillColor(...bgCard);
+    doc.setDrawColor(...borderColor);
+    doc.setLineWidth(0.4);
+    doc.roundedRect(margin, sec6Y, contentWidth, sec6H, 2, 2, 'FD');
+    drawSectionBar("6. ESTIMATION BUDGÉTAIRE PRÉVISIONNELLE & BESOINS MATÉRIELS", sec6Y);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(...primaryDark);
+    doc.text("BUDGET ANNUEL PRÉVISIONNEL ESTIMÉ :", margin + 4, sec6Y + 11.5);
+    drawDottedLine(margin + 64, sec6Y + 11.5, margin + 120);
+    doc.text("MAD", margin + 122, sec6Y + 11.5);
+
+    doc.text("SOURCES DE FINANCEMENT ENVISAGÉES (cocher) :", margin + 4, sec6Y + 17);
+    drawCheckbox(margin + 4, sec6Y + 19, "Cotisations adhérents");
+    drawCheckbox(margin + 46, sec6Y + 19, "Sponsoring / Partenaires");
+    drawCheckbox(margin + 92, sec6Y + 19, "Subvention UPSSA");
+    drawCheckbox(margin + 135, sec6Y + 19, "Autofinancement");
+
+    // SECTION 7: ENGAGEMENTS, SIGNATURES & QR CODE
+    y += sec6H + 3.5;
+    const sec7Y = y;
+    const sec7H = 50;
+    doc.setFillColor(255, 255, 255);
+    doc.setDrawColor(...borderColor);
+    doc.setLineWidth(0.4);
+    doc.roundedRect(margin, sec7Y, contentWidth, sec7H, 2, 2, 'FD');
+    drawSectionBar("7. ENGAGEMENTS, SIGNATURES MANUSCRITES & SOUMISSION NUMÉRIQUE", sec7Y);
+
+    // Déclaration
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.8);
+    doc.setTextColor(...textDark);
+    const engStmt = "Les soussignés certifient sur l'honneur l'exactitude des informations du présent dossier papier et s'engagent formellement à respecter la Charte de la Vie Étudiante UPSSA ainsi que le règlement des études universitaires.";
+    doc.text(doc.splitTextToSize(engStmt, contentWidth - 40), margin + 4, sec7Y + 10.5);
+
+    // QR Code vers la version électronique
+    const submitUrl = "https://upssa-clubs.fly.dev/creer-club";
+    try {
+      const qrDataUrl = await QRCode.toDataURL(submitUrl, {
+        width: 120,
+        margin: 1,
+        color: { dark: '#003844', light: '#ffffff' }
+      });
+      doc.addImage(qrDataUrl, 'PNG', pageWidth - margin - 32, sec7Y + 9, 28, 28);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(5.5);
+      doc.setTextColor(...primaryColor);
+      doc.text("SCANNEZ POUR SAISIR", pageWidth - margin - 31, sec7Y + 39.5);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(5);
+      doc.setTextColor(...textMuted);
+      doc.text("Version électronique en ligne", pageWidth - margin - 32.5, sec7Y + 42.5);
+    } catch (e) {
+      console.warn("QR Code for paper form failed:", e);
+    }
+
+    // 3 Signature boxes
+    const boxW = 46;
+    const boxH = 28;
+    const signY = sec7Y + 18;
+
+    // 1. Président
+    doc.setFillColor(250, 250, 252);
+    doc.setDrawColor(...borderColor);
+    doc.roundedRect(margin + 4, signY, boxW, boxH, 1, 1, 'FD');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6.8);
+    doc.setTextColor(...primaryDark);
+    doc.text("LE/LA PRÉSIDENT(E)", margin + 7, signY + 4.5);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6);
+    doc.setTextColor(...textMuted);
+    doc.text("Nom : ....................................", margin + 7, signY + 9);
+    doc.text("Date : ...................................", margin + 7, signY + 13.5);
+    doc.text("Signature manuscrite :", margin + 7, signY + 18);
+
+    // 2. Secrétaire Général
+    doc.roundedRect(margin + 53, signY, boxW, boxH, 1, 1, 'FD');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6.8);
+    doc.setTextColor(...primaryDark);
+    doc.text("LE/LA SECRÉTAIRE GÉNÉRAL(E)", margin + 56, signY + 4.5);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6);
+    doc.setTextColor(...textMuted);
+    doc.text("Nom : ....................................", margin + 56, signY + 9);
+    doc.text("Date : ...................................", margin + 56, signY + 13.5);
+    doc.text("Signature manuscrite :", margin + 56, signY + 18);
+
+    // 3. Tuteur Enseignant
+    doc.roundedRect(margin + 102, signY, boxW, boxH, 1, 1, 'FD');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6.8);
+    doc.setTextColor(...primaryDark);
+    doc.text("TUTEUR ENSEIGNANT RÉFÉRENT", margin + 105, signY + 4.5);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6);
+    doc.setTextColor(...textMuted);
+    doc.text("Dr. Loubna Agouzal (ou enseignant)", margin + 105, signY + 9);
+    doc.text("Visa & Avis favorable :", margin + 105, signY + 13.5);
+    doc.text("Signature :", margin + 105, signY + 18);
+
+    // Footer Page 2
+    doc.setDrawColor(...borderColor);
+    doc.setLineWidth(0.3);
+    doc.line(margin, pageHeight - 9, pageWidth - margin, pageHeight - 9);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.5);
+    doc.setTextColor(...textMuted);
+    doc.text("Dossier officiel délivré par la Direction de la Vie Étudiante UPSSA • Saisie électronique obligatoire sur https://upssa-clubs.fly.dev/creer-club", margin, pageHeight - 5.5);
+    doc.text("Page 2 / 2", pageWidth - margin - 14, pageHeight - 5.5);
+
+    // Automatic download
+    if (autoDownload && typeof window !== 'undefined') {
+      const filename = "Dossier_Creation_Club_Format_Papier_UPSSA.pdf";
+      doc.save(filename);
+    }
+
+    return doc;
+  }
 }

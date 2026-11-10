@@ -24,7 +24,10 @@ import { ClubApplication, ClubMember } from '../../models/club.model';
               Découvrez la diversité des associations étudiantes reconnues par l'université, rejoignez leurs activités via QR Code ou gérez leurs fiches officielles.
             </p>
           </div>
-          <div>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button type="button" class="btn btn-outline" (click)="downloadPaperFormPdf()" title="Télécharger le dossier officiel vierge de création de club au format papier à imprimer">
+              📄 Dossier Papier (PDF)
+            </button>
             <a routerLink="/nouveau-club" class="btn btn-primary">
               ➕ Créer un Nouveau Club
             </a>
@@ -2491,7 +2494,7 @@ export class ClubDirectoryComponent implements OnInit {
     private clubService: ClubService,
     private qrService: QrService,
     private pdfService: PdfService
-  ) {}
+  ) { }
 
   async downloadClubSheet(club: ClubApplication): Promise<void> {
     if (!club || this.downloadingSheetClubId === club.id) return;
@@ -2766,6 +2769,17 @@ export class ClubDirectoryComponent implements OnInit {
 
   printMembersList(): void {
     window.print();
+  }
+
+  downloadPaperFormPdf(): void {
+    this.pdfService.generateBlankClubCreationFormPdf(true)
+      .then(() => {
+        this.showNotification('Dossier officiel de création (version papier A4) téléchargé avec succès !');
+      })
+      .catch((err) => {
+        console.error('Error generating paper PDF:', err);
+        this.showNotification('Erreur lors du téléchargement du formulaire papier.', 'error');
+      });
   }
 
   downloadAllMembersPdf(): void {

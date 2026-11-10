@@ -172,6 +172,14 @@ export class AdminDashboardComponent implements OnInit {
     }
   }
 
+  async downloadPaperFormPdf(): Promise<void> {
+    try {
+      await this.pdfService.generateBlankClubCreationFormPdf(true);
+    } catch (e) {
+      console.error('Erreur téléchargement formulaire papier PDF:', e);
+    }
+  }
+
   deleteApplication(id?: number | string): void {
     const targetId = id || this.selectedClub?.id || this.selectedClub?.tracking_code;
     if (!targetId) return;

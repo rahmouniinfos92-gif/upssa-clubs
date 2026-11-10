@@ -19,6 +19,7 @@ export class ClubFormComponent {
   isSubmitting = false;
   submissionSuccess = false;
   isGeneratingPdf = false;
+  isGeneratingPaperPdf = false;
   trackingCode = '';
   errorMessage = '';
   copiedCode = false;
@@ -425,6 +426,18 @@ export class ClubFormComponent {
       console.error('Erreur génération récépissé PDF:', err);
     } finally {
       this.isGeneratingPdf = false;
+    }
+  }
+
+  async downloadPaperFormPdf(): Promise<void> {
+    if (this.isGeneratingPaperPdf) return;
+    this.isGeneratingPaperPdf = true;
+    try {
+      await this.pdfService.generateBlankClubCreationFormPdf(true);
+    } catch (err) {
+      console.error('Erreur téléchargement formulaire papier PDF:', err);
+    } finally {
+      this.isGeneratingPaperPdf = false;
     }
   }
 
