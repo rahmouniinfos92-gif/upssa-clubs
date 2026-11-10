@@ -72,13 +72,26 @@
         </div>
       </div>
 
+      <!-- BANNIÈRE DE TÉLÉCHARGEMENT DU RÉCÉPISSÉ OFFICIEL PDF -->
+      <div class="pdf-receipt-download-banner">
+        <div class="pdf-banner-icon">📄</div>
+        <div class="pdf-banner-content">
+          <h4>Récépissé Officiel de Création de Club (PDF)</h4>
+          <p>Le document officiel attestant du dépôt de votre demande a été généré avec votre code de suivi <strong>{{ trackingCode }}</strong>, le détail du bureau et le cachet UPSSA.</p>
+        </div>
+        <button type="button" class="btn btn-primary btn-download-pdf" (click)="downloadReceiptPdf()" [disabled]="isGeneratingPdf">
+          <span *ngIf="!isGeneratingPdf">📥 Télécharger le Récépissé (PDF)</span>
+          <span *ngIf="isGeneratingPdf">⏳ Génération en cours...</span>
+        </button>
+      </div>
+
       <div class="success-actions">
-        <a [routerLink]="['/suivi']" [queryParams]="{ code: trackingCode }" class="btn btn-primary">
+        <button type="button" class="btn btn-primary" (click)="downloadReceiptPdf()" [disabled]="isGeneratingPdf">
+          📄 Télécharger le Récépissé (PDF)
+        </button>
+        <a [routerLink]="['/suivi']" [queryParams]="{ code: trackingCode }" class="btn btn-secondary">
           🔍 Suivre mon dossier
         </a>
-        <button type="button" class="btn btn-secondary" (click)="printDossier()">
-          🖨️ Imprimer le récépissé
-        </button>
         <button type="button" class="btn btn-outline" (click)="resetForm()">
           ➕ Déposer une autre demande
         </button>

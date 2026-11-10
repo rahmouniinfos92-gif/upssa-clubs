@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ClubService } from '../../services/club.service';
+import { PdfService } from '../../services/pdf.service';
 import { ClubApplication } from '../../models/club.model';
 
 @Component({
@@ -78,8 +79,12 @@ import { ClubApplication } from '../../models/club.model';
                 <span class="badge" [ngClass]="'badge-' + club.status">
                   {{ getStatusLabel(club.status) }}
                 </span>
+                <button type="button" class="btn btn-primary btn-sm" (click)="downloadReceiptPdf()" [disabled]="isDownloadingPdf" style="display: inline-flex; align-items: center; gap: 0.35rem;">
+                  <span *ngIf="!isDownloadingPdf">📄 Télécharger Récépissé (PDF)</span>
+                  <span *ngIf="isDownloadingPdf">⏳ En cours...</span>
+                </button>
                 <button type="button" class="btn btn-outline btn-sm print-btn" (click)="printPage()">
-                  🖨️ Imprimer la fiche
+                  🖨️ Imprimer
                 </button>
               </div>
             </div>
@@ -674,10 +679,25 @@ export class ClubTrackingComponent implements OnInit {
   club: ClubApplication | null = null;
   errorMessage = '';
 
+  isDownloadingPdf = false;
+
   constructor(
     private clubService: ClubService,
+    private pdfService: PdfService,
     private route: ActivatedRoute
   ) {}
+
+  async downloadReceiptPdf(): Promise<void> {
+    if (!this.club || this.isDownloadingPdf) return;
+    this.isDownloadingPdf = true;
+    try {
+      await this.pdfService.generateClubApplicationReceiptPdf(this.club, this.club.tracking_code || this.searchCode || '', true);
+    } catch (err) {
+      console.error('Erreur génération récépissé PDF:', err);
+    } finally {
+      this.isDownloadingPdf = false;
+    }
+  }
 
   ngOnInit(): void {
     this.route.queryParams.subscribe(params => {

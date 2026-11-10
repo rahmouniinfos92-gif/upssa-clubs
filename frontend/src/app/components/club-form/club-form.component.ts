@@ -4,6 +4,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { ClubService } from '../../services/club.service';
 import { QrService } from '../../services/qr.service';
+import { PdfService } from '../../services/pdf.service';
 import { ClubApplication, ClubTypology, MeetingFrequency, AdditionalMember } from '../../models/club.model';
 
 @Component({
@@ -17,6 +18,7 @@ export class ClubFormComponent {
   currentStep = 1;
   isSubmitting = false;
   submissionSuccess = false;
+  isGeneratingPdf = false;
   trackingCode = '';
   errorMessage = '';
   copiedCode = false;
@@ -162,6 +164,7 @@ export class ClubFormComponent {
   constructor(
     private clubService: ClubService,
     private qrService: QrService,
+    private pdfService: PdfService,
     private router: Router
   ) {}
 
@@ -392,6 +395,17 @@ export class ClubFormComponent {
           this.joinQrDataUrl = await this.qrService.generateDataUrl(this.joinUrl, 220);
         }
         window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        // Auto-téléchargement du récépissé officiel de création de club en PDF
+        try {
+          this.isGeneratingPdf = true;
+          const clubToPrint = this.createdClub || (this.formData as any);
+          await this.pdfService.generateClubApplicationReceiptPdf(clubToPrint, this.trackingCode, true);
+        } catch (pdfErr) {
+          console.warn('Erreur lors du téléchargement automatique du PDF:', pdfErr);
+        } finally {
+          this.isGeneratingPdf = false;
+        }
       },
       error: (err) => {
         this.isSubmitting = false;
@@ -399,6 +413,19 @@ export class ClubFormComponent {
         this.errorMessage = err.error?.error || 'Une erreur est survenue lors de la soumission du dossier. Veuillez réessayer.';
       }
     });
+  }
+
+  async downloadReceiptPdf(): Promise<void> {
+    if (this.isGeneratingPdf) return;
+    this.isGeneratingPdf = true;
+    try {
+      const clubToPrint = this.createdClub || (this.formData as any);
+      await this.pdfService.generateClubApplicationReceiptPdf(clubToPrint, this.trackingCode, true);
+    } catch (err) {
+      console.error('Erreur génération récépissé PDF:', err);
+    } finally {
+      this.isGeneratingPdf = false;
+    }
   }
 
   copyTrackingCode(): void {
@@ -410,7 +437,7 @@ export class ClubFormComponent {
   }
 
   printDossier(): void {
-    window.print();
+    this.downloadReceiptPdf();
   }
 
   resetForm(): void {

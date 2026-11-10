@@ -1306,3 +1306,57 @@
   }
 }
 
+.pdf-receipt-download-banner {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  background: linear-gradient(135deg, #e6f6f7 0%, #f0fdf4 100%);
+  border: 1.5px solid #a7f3d0;
+  border-radius: var(--radius-lg, 16px);
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 4px 15px -3px rgba(0, 154, 166, 0.1);
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+.pdf-banner-icon {
+  font-size: 2.2rem;
+  line-height: 1;
+  background: #ffffff;
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  flex-shrink: 0;
+}
+.pdf-banner-content {
+  flex: 1;
+}
+.pdf-banner-content h4 {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--secondary, #003844);
+  margin-bottom: 0.25rem;
+}
+.pdf-banner-content p {
+  font-size: 0.85rem;
+  color: #475569;
+  line-height: 1.4;
+  margin: 0;
+}
+.btn-download-pdf {
+  font-weight: 700;
+  padding: 0.75rem 1.25rem;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0, 154, 166, 0.25);
+}
+@media (max-width: 768px) {
+  .pdf-receipt-download-banner {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+
+
