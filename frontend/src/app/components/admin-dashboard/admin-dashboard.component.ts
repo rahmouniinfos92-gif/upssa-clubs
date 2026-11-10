@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ClubService } from '../../services/club.service';
+import { PdfService } from '../../services/pdf.service';
 import { ClubApplication, ClubStatus, DashboardStats } from '../../models/club.model';
 
 @Component({
@@ -22,6 +23,7 @@ export class AdminDashboardComponent implements OnInit {
   reviewNotes = '';
   reviewerName = 'Commission de la Vie Étudiante';
   isUpdating = false;
+  isGeneratingPdf = false;
   successNotice = '';
 
   // Filters
@@ -37,7 +39,10 @@ export class AdminDashboardComponent implements OnInit {
     'Entrepreneuriat, Débat & Innovation'
   ];
 
-  constructor(private clubService: ClubService) {}
+  constructor(
+    private clubService: ClubService,
+    private pdfService: PdfService
+  ) {}
 
   ngOnInit(): void {
     this.loadData();
@@ -104,17 +109,40 @@ export class AdminDashboardComponent implements OnInit {
       this.reviewNotes,
       this.reviewerName
     ).subscribe({
-      next: (res) => {
+      next: async (res) => {
         this.isUpdating = false;
-        this.successNotice = 'Décision enregistrée avec succès !';
         this.selectedClub = res.club;
         this.loadData();
+
+        if (this.reviewStatus === 'APPROUVE') {
+          this.successNotice = 'Club approuvé et agréé avec succès ! La Fiche Officielle du Club a été générée et téléchargée.';
+          try {
+            await this.pdfService.generateClubSheetPdf(res.club, true);
+          } catch (pdfErr) {
+            console.warn('PDF club sheet generation warning:', pdfErr);
+          }
+        } else {
+          this.successNotice = 'Décision enregistrée avec succès !';
+        }
       },
       error: (err) => {
         this.isUpdating = false;
         alert('Erreur lors de la sauvegarde : ' + (err.error?.error || err.message));
       }
     });
+  }
+
+  async downloadClubSheet(club?: ClubApplication | null): Promise<void> {
+    const target = club || this.selectedClub;
+    if (!target || this.isGeneratingPdf) return;
+    this.isGeneratingPdf = true;
+    try {
+      await this.pdfService.generateClubSheetPdf(target, true);
+    } catch (err) {
+      console.error('Erreur génération fiche du club:', err);
+    } finally {
+      this.isGeneratingPdf = false;
+    }
   }
 
   deleteApplication(id?: number): void {

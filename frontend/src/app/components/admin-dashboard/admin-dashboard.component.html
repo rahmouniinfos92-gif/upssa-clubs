@@ -151,7 +151,16 @@
                 {{ c.submission_date }}
               </td>
               <td class="text-right">
-                <button type="button" class="btn btn-outline btn-sm" (click)="openReviewModal(c)">
+                <button 
+                  type="button" 
+                  class="btn btn-outline btn-sm" 
+                  (click)="downloadClubSheet(c)"
+                  title="Télécharger la fiche officielle du club au format PDF"
+                  style="margin-right: 0.35rem;"
+                >
+                  📄 Fiche PDF
+                </button>
+                <button type="button" class="btn btn-primary btn-sm" (click)="openReviewModal(c)">
                   🔍 Examiner & Décider
                 </button>
               </td>
@@ -186,6 +195,15 @@
         <span class="text-muted">{{ selectedClub.typology }}</span>
       </div>
       <div class="modal-header-actions">
+        <button 
+          type="button" 
+          class="btn btn-primary btn-sm" 
+          (click)="downloadClubSheet(selectedClub)"
+          [disabled]="isGeneratingPdf"
+          title="Télécharger la fiche officielle d'agrément de ce club au format PDF"
+        >
+          📄 Fiche Officielle (PDF)
+        </button>
         <button 
           type="button" 
           class="btn btn-outline btn-sm" 
@@ -250,6 +268,16 @@
           >
             <span *ngIf="!isUpdating">💾 Enregistrer la Décision</span>
             <span *ngIf="isUpdating">Enregistrement...</span>
+          </button>
+
+          <button 
+            type="button" 
+            class="btn btn-outline" 
+            (click)="downloadClubSheet(selectedClub)"
+            [disabled]="isGeneratingPdf"
+            title="Télécharger la fiche officielle d'agrément du club au format PDF"
+          >
+            📄 Télécharger la Fiche du Club (PDF)
           </button>
 
           <button 

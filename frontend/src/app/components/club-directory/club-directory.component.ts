@@ -134,6 +134,16 @@ import { ClubApplication, ClubMember } from '../../models/club.model';
               </button>
               <button 
                 type="button" 
+                class="btn-sheet-pdf" 
+                (click)="downloadClubSheet(c)" 
+                [disabled]="downloadingSheetClubId === c.id"
+                title="Télécharger la Fiche Officielle d'Agrément du Club au format PDF"
+              >
+                <span *ngIf="downloadingSheetClubId !== c.id">📄 Fiche PDF</span>
+                <span *ngIf="downloadingSheetClubId === c.id">⏳ ...</span>
+              </button>
+              <button 
+                type="button" 
                 class="btn-qr-view" 
                 (click)="openQrModal(c)" 
                 title="Afficher et scanner le QR code pour rejoindre"
@@ -148,6 +158,14 @@ import { ClubApplication, ClubMember } from '../../models/club.model';
                 <a [href]="'mailto:' + c.president_email" title="Contacter">📧 Contacter</a>
               </div>
               <div class="card-mgmt-btns">
+                <button 
+                  type="button" 
+                  class="btn-card-action btn-sheet-pdf-alt" 
+                  (click)="downloadClubSheet(c)" 
+                  title="Télécharger la fiche officielle d'agrément"
+                >
+                  📄 Fiche
+                </button>
                 <button 
                   type="button" 
                   class="btn-card-action btn-edit" 
@@ -246,6 +264,16 @@ import { ClubApplication, ClubMember } from '../../models/club.model';
             </div>
             
             <div class="header-right-tools">
+              <button 
+                type="button" 
+                class="btn btn-outline btn-sm btn-modal-sheet" 
+                (click)="downloadClubSheet(membersModalClub)"
+                [disabled]="downloadingSheetClubId === membersModalClub.id"
+                title="Télécharger la fiche officielle d'agrément de ce club au format PDF"
+              >
+                <span *ngIf="downloadingSheetClubId !== membersModalClub.id">📄 Fiche d'Agrément (PDF)</span>
+                <span *ngIf="downloadingSheetClubId === membersModalClub.id">⏳ Téléchargement...</span>
+              </button>
               <div class="members-total-counter">
                 <span class="counter-num">👥 {{ membersList.length }}</span>
                 <span class="counter-label">membres inscrits</span>
@@ -1181,6 +1209,54 @@ import { ClubApplication, ClubMember } from '../../models/club.model';
     }
     .btn-qr-view:hover {
       background: var(--primary-light);
+    }
+    .btn-sheet-pdf {
+      background: #f0fdf4;
+      border: 1.5px solid #059669;
+      color: #047857;
+      padding: 0.45rem 0.65rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.8rem;
+      font-weight: 700;
+      transition: all 0.15s ease;
+      cursor: pointer;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    .btn-sheet-pdf:hover {
+      background: #dcfce7;
+      color: #065f46;
+      transform: translateY(-1px);
+    }
+    .btn-sheet-pdf-alt {
+      background: #f0fdf4;
+      border-color: #a7f3d0;
+      color: #059669;
+    }
+    .btn-sheet-pdf-alt:hover {
+      background: #059669;
+      color: #ffffff;
+      border-color: #059669;
+    }
+    .btn-modal-sheet {
+      background: #ecfdf5;
+      border: 1px solid #10b981;
+      color: #047857;
+      font-weight: 700;
+      font-size: 0.82rem;
+      padding: 0.4rem 0.8rem;
+      border-radius: var(--radius-sm);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: all 0.15s ease;
+      cursor: pointer;
+    }
+    .btn-modal-sheet:hover {
+      background: #059669;
+      color: #ffffff;
     }
 
     /* Card actions bar */
@@ -2392,6 +2468,7 @@ export class ClubDirectoryComponent implements OnInit {
   // Individual Member Detail Modal State
   detailedMember: ClubMember | null = null;
   generatingPdfMemberId: number | null = null;
+  downloadingSheetClubId: number | null = null;
 
   // Feedback Notification
   notificationMessage = '';
@@ -2403,6 +2480,20 @@ export class ClubDirectoryComponent implements OnInit {
     private qrService: QrService,
     private pdfService: PdfService
   ) {}
+
+  async downloadClubSheet(club: ClubApplication): Promise<void> {
+    if (!club || this.downloadingSheetClubId === club.id) return;
+    this.downloadingSheetClubId = club.id || -1;
+    try {
+      await this.pdfService.generateClubSheetPdf(club, true);
+      this.showNotification(`Fiche d'agrément officielle du club « ${club.official_name} » téléchargée avec succès.`);
+    } catch (err) {
+      console.error('Erreur téléchargement fiche club:', err);
+      this.showNotification('Erreur lors de la génération de la fiche PDF.', 'error');
+    } finally {
+      this.downloadingSheetClubId = null;
+    }
+  }
 
   ngOnInit(): void {
     this.loadClubs();
