@@ -1,0 +1,176 @@
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { ClubService } from '../../services/club.service';
+import { ClubApplication, ClubStatus, DashboardStats } from '../../models/club.model';
+
+@Component({
+  selector: 'app-admin-dashboard',
+  standalone: true,
+  imports: [CommonModule, FormsModule],
+  templateUrl: './admin-dashboard.component.html',
+  styleUrls: ['./admin-dashboard.component.css']
+})
+export class AdminDashboardComponent implements OnInit {
+  clubs: ClubApplication[] = [];
+  filteredClubs: ClubApplication[] = [];
+  stats: DashboardStats | null = null;
+  loading = false;
+
+  selectedClub: ClubApplication | null = null;
+  reviewStatus: ClubStatus = 'APPROUVE';
+  reviewNotes = '';
+  reviewerName = 'Commission de la Vie Étudiante';
+  isUpdating = false;
+  successNotice = '';
+
+  // Filters
+  filterStatus = 'ALL';
+  filterTypology = 'ALL';
+  searchQuery = '';
+
+  typologies = [
+    'Académique / Scientifique & Médical',
+    'Culturel & Artistique',
+    'Sport & Bien-être',
+    'Citoyenneté, Humanitaire & RSE',
+    'Entrepreneuriat, Débat & Innovation'
+  ];
+
+  constructor(private clubService: ClubService) {}
+
+  ngOnInit(): void {
+    this.loadData();
+  }
+
+  loadData(): void {
+    this.loading = true;
+    this.clubService.getStats().subscribe({
+      next: (s) => (this.stats = s),
+      error: (e) => console.error('Stats error:', e)
+    });
+
+    this.clubService.getClubs(this.filterStatus, this.filterTypology, this.searchQuery).subscribe({
+      next: (data) => {
+        this.clubs = data;
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error('Fetch clubs error:', err);
+        this.loading = false;
+      }
+    });
+  }
+
+  applyFilters(): void {
+    this.loadData();
+  }
+
+  resetFilters(): void {
+    this.filterStatus = 'ALL';
+    this.filterTypology = 'ALL';
+    this.searchQuery = '';
+    this.loadData();
+  }
+
+  openReviewModal(club: ClubApplication): void {
+    this.selectedClub = club;
+    this.reviewStatus = (club.status as ClubStatus) || 'EN_COURS_DE_REVUE';
+    this.reviewNotes = club.admin_notes || '';
+    this.reviewerName = club.reviewed_by || 'Commission de la Vie Étudiante';
+    this.successNotice = '';
+
+    if (club.id) {
+      this.clubService.getClubById(club.id).subscribe({
+        next: (fullClub) => {
+          this.selectedClub = fullClub;
+        }
+      });
+    }
+  }
+
+  closeModal(): void {
+    this.selectedClub = null;
+    this.successNotice = '';
+  }
+
+  saveDecision(): void {
+    if (!this.selectedClub || !this.selectedClub.id) return;
+
+    this.isUpdating = true;
+    this.clubService.updateStatus(
+      this.selectedClub.id,
+      this.reviewStatus,
+      this.reviewNotes,
+      this.reviewerName
+    ).subscribe({
+      next: (res) => {
+        this.isUpdating = false;
+        this.successNotice = 'Décision enregistrée avec succès !';
+        this.selectedClub = res.club;
+        this.loadData();
+      },
+      error: (err) => {
+        this.isUpdating = false;
+        alert('Erreur lors de la sauvegarde : ' + (err.error?.error || err.message));
+      }
+    });
+  }
+
+  deleteApplication(id?: number): void {
+    if (!id) return;
+    if (confirm('Êtes-vous sûr de vouloir supprimer définitivement ce dossier ?')) {
+      this.clubService.deleteClub(id).subscribe({
+        next: () => {
+          this.closeModal();
+          this.loadData();
+        },
+        error: (err) => alert('Erreur lors de la suppression : ' + err.message)
+      });
+    }
+  }
+
+  getStatusBadgeClass(status?: string): string {
+    return 'badge-' + (status || 'SOUMIS');
+  }
+
+  getStatusLabel(status?: string): string {
+    switch (status) {
+      case 'SOUMIS': return 'Soumis';
+      case 'EN_COURS_DE_REVUE': return 'En instruction';
+      case 'APPROUVE': return 'Validé / Agréé';
+      case 'REFUSE': return 'Refusé';
+      case 'RETOUCHE_DEMANDEE': return 'Retouche requise';
+      default: return status || 'Inconnu';
+    }
+  }
+
+  printDossier(): void {
+    window.print();
+  }
+
+  exportMembersCsv(): void {
+    if (!this.selectedClub || !this.selectedClub.members || this.selectedClub.members.length === 0) return;
+    const headers = ['Nom & Prénom', 'Faculté', 'Niveau', 'Loisirs', 'Compétences', 'Idée de projet', 'Email', 'Téléphone', 'Date adhésion'];
+    const rows = this.selectedClub.members.map(m => [
+      `"${(m.full_name || '').replace(/"/g, '""')}"`,
+      `"${(m.filiere || '').replace(/"/g, '""')}"`,
+      `"${(m.academic_year || '').replace(/"/g, '""')}"`,
+      `"${(m.loisir || '').replace(/"/g, '""')}"`,
+      `"${(m.competence || '').replace(/"/g, '""')}"`,
+      `"${(m.project_idea || '').replace(/"/g, '""')}"`,
+      `"${(m.email || '').replace(/"/g, '""')}"`,
+      `"${(m.phone || '').replace(/"/g, '""')}"`,
+      `"${m.joined_at || ''}"`
+    ]);
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Membres_${(this.selectedClub.acronym || this.selectedClub.official_name).replace(/[^a-zA-Z0-9]/g, '_')}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+}
+

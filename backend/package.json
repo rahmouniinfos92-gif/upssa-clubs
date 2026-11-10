@@ -1,0 +1,16 @@
+{
+  "name": "club-creation-backend",
+  "version": "1.0.0",
+  "description": "Backend API for University Student Club Creation & Validation Portal",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "multer": "^1.4.5-lts.1"
+  }
+}
+

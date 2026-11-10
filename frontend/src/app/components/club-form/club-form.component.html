@@ -1,0 +1,772 @@
+<div class="form-page">
+  <div class="container">
+    
+    <!-- Hero / Header Title -->
+    <div class="page-header" *ngIf="!submissionSuccess">
+      <div class="header-content">
+        <div class="university-brand-strip">
+          <span class="sub-badge">UPSSA — Procédure Officielle Universitaire</span>
+          <span class="sub-badge-campus">Campus Agadir</span>
+        </div>
+        <h1 class="page-title">Demande de Création de Club Étudiant</h1>
+        <p class="page-desc">
+          Complétez ce dossier officiel pour soumettre votre projet associatif à l'évaluation de la Commission de la Vie Étudiante de l'UPSSA (Université Privée de la Santé et des Sciences d'Agadir).
+        </p>
+      </div>
+      <div class="header-actions">
+        <button type="button" class="btn btn-outline demo-btn" (click)="fillDemoData()">
+          <span>⚡</span> Pré-remplir un exemple complet
+        </button>
+      </div>
+    </div>
+
+    <!-- SUCCESS SCREEN -->
+    <div *ngIf="submissionSuccess" class="success-screen card">
+      <div class="success-icon-wrap">
+        <div class="success-circle">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </div>
+      </div>
+      <h2 class="success-title">Dossier de Création Enregistré !</h2>
+      <p class="success-sub">
+        Votre demande pour le club <strong>{{ formData.official_name }}</strong> a été transmise avec succès à la Commission de la Vie Étudiante.
+      </p>
+
+      <div class="tracking-box">
+        <span class="tracking-label">Votre Code de Suivi Unique</span>
+        <div class="tracking-code-row">
+          <span class="tracking-code-val">{{ trackingCode }}</span>
+          <button type="button" class="btn btn-secondary copy-btn" (click)="copyTrackingCode()">
+            <span *ngIf="!copiedCode">📋 Copier</span>
+            <span *ngIf="copiedCode" class="text-success">✓ Copié !</span>
+          </button>
+        </div>
+        <p class="tracking-info">
+          Conservez ce numéro précieusement. Il vous permettra de consulter en temps réel l'état d'avancement et les remarques de la commission.
+        </p>
+      </div>
+
+      <!-- QR CODE D'ADHÉSION POUR LES ÉTUDIANTS -->
+      <div class="qr-membership-card card mt-4" *ngIf="joinQrDataUrl">
+        <div class="qr-membership-layout">
+          <div class="qr-img-frame">
+            <img [src]="joinQrDataUrl" alt="QR Code d'adhésion" class="qr-code-display">
+          </div>
+          <div class="qr-info-block">
+            <span class="qr-chip">Adhésion Étudiante</span>
+            <h3 class="qr-card-title">QR Code pour Rejoindre ce Club</h3>
+            <p class="qr-card-desc">
+              Partagez ou affichez ce QR Code pour permettre aux étudiants de l'UPSSA de scanner et de s'inscrire immédiatement en tant que membres (nom & prénom, filière, année, loisir, compétence et idée de projet).
+            </p>
+            <div class="qr-btns-row">
+              <a [routerLink]="['/rejoindre', createdClub?.id]" class="btn btn-primary" target="_blank">
+                ✍️ Ouvrir le formulaire d'adhésion
+              </a>
+              <a [href]="joinQrDataUrl" [download]="'QRCode-' + formData.official_name + '.png'" class="btn btn-secondary">
+                💾 Télécharger le QR Code (PNG)
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="success-actions">
+        <a [routerLink]="['/suivi']" [queryParams]="{ code: trackingCode }" class="btn btn-primary">
+          🔍 Suivre mon dossier
+        </a>
+        <button type="button" class="btn btn-secondary" (click)="printDossier()">
+          🖨️ Imprimer le récépissé
+        </button>
+        <button type="button" class="btn btn-outline" (click)="resetForm()">
+          ➕ Déposer une autre demande
+        </button>
+      </div>
+    </div>
+
+    <!-- MAIN MULTI-STEP FORM -->
+    <div *ngIf="!submissionSuccess" class="form-wrapper">
+
+      <!-- TIMELINE / STEPPER NAVIGATION -->
+      <div class="stepper-timeline-card card">
+        <div class="timeline-meta-bar">
+          <div class="timeline-step-indicator">
+            <span class="timeline-step-tag">Étape {{ currentStep }} sur {{ steps.length }}</span>
+            <span class="timeline-step-name">{{ getCurrentStepMeta().icon }} {{ getCurrentStepMeta().title }} : <small>{{ getCurrentStepMeta().subtitle }}</small></span>
+          </div>
+          <div class="timeline-progress-gauge">
+            <span class="gauge-label">{{ getProgressPercentage() }}% complété</span>
+            <div class="gauge-track">
+              <div class="gauge-fill" [style.width.%]="getProgressPercentage()"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="timeline-nav-wrapper">
+          <!-- Background track line connecting center of circles -->
+          <div class="timeline-rail">
+            <div class="timeline-rail-fill" [style.width.%]="getProgressPercentage()"></div>
+          </div>
+
+          <!-- Step nodes -->
+          <div class="timeline-nodes-row">
+            <div 
+              *ngFor="let s of steps" 
+              class="timeline-node-item" 
+              [class.active]="currentStep === s.number" 
+              [class.completed]="currentStep > s.number"
+              [class.pending]="currentStep < s.number"
+              (click)="setStep(s.number)"
+              [title]="'Aller à : ' + s.title"
+            >
+              <div class="timeline-bullet-wrap">
+                <div class="timeline-bullet">
+                  <span *ngIf="currentStep > s.number" class="bullet-check">✓</span>
+                  <span *ngIf="currentStep <= s.number">{{ s.number }}</span>
+                </div>
+              </div>
+              <div class="timeline-node-caption">
+                <span class="caption-title">{{ s.title }}</span>
+                <span class="caption-sub">{{ s.subtitle }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ERROR ALERT -->
+      <div *ngIf="errorMessage" class="alert alert-danger">
+        <span class="alert-icon">⚠️</span>
+        <div class="alert-content">{{ errorMessage }}</div>
+      </div>
+
+      <!-- STEP CONTENT CONTAINER -->
+      <div class="card form-card">
+
+        <!-- ================= STEP 1: IDENTITÉ & CATÉGORISATION ================= -->
+        <div *ngIf="currentStep === 1" class="step-pane">
+          <div class="section-title-wrap">
+            <span class="section-badge">Section 1</span>
+            <h2 class="section-title">Identité & Catégorisation du Club</h2>
+            <p class="section-sub">Définissez l'image de marque et l'orientation thématique de votre club.</p>
+          </div>
+
+          <div class="grid-2">
+            <div class="form-group">
+              <label class="form-label">Nom officiel du club <span class="required">*</span></label>
+              <input 
+                type="text" 
+                class="form-control" 
+                placeholder="Ex: Club Robotique & IA, Arts & Scènes..." 
+                [(ngModel)]="formData.official_name"
+              >
+              <span class="form-hint">Court, impactant et clair pour l'ensemble des étudiants.</span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Acronyme / Sigle (le cas échéant)</label>
+              <input 
+                type="text" 
+                class="form-control" 
+                placeholder="Ex: CRIA, AS, ENAC..." 
+                [(ngModel)]="formData.acronym"
+              >
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Slogan / Devise</label>
+            <input 
+              type="text" 
+              class="form-control" 
+              placeholder="Ex: Innover ensemble pour un campus connecté." 
+              [(ngModel)]="formData.slogan"
+            >
+          </div>
+
+          <!-- TYPOLOGY SECTION (BALANCED 3x2 UI) -->
+          <div class="form-group typology-section">
+            <div class="typology-header-row">
+              <label class="form-label mb-0">Typologie du club <span class="required">*</span></label>
+              <span class="active-selection-pill" *ngIf="formData.typology">
+                <span class="pill-dot"></span>
+                <span>Choix actuel : <strong>{{ formData.typology }}</strong></span>
+              </span>
+            </div>
+
+            <!-- 3x2 GRID (6 EQUAL CARDS) -->
+            <div class="typology-grid-3x2">
+              <div 
+                *ngFor="let typ of typologies" 
+                class="typ-card"
+                [class.selected]="!isCustomTypology && formData.typology === typ"
+                (click)="selectTypology(typ)"
+              >
+                <div class="typ-radio">
+                  <div class="typ-radio-dot" *ngIf="!isCustomTypology && formData.typology === typ"></div>
+                </div>
+                <div class="typ-text">{{ typ }}</div>
+              </div>
+
+              <!-- 6TH CARD: AUTRE (PERSONNALISÉE) -->
+              <div 
+                class="typ-card typ-card-autre"
+                [class.selected]="isCustomTypology"
+                (click)="enableCustomTypology()"
+              >
+                <div class="typ-radio">
+                  <div class="typ-radio-dot" *ngIf="isCustomTypology"></div>
+                </div>
+                <div class="typ-text">
+                  <span class="sparkle-icon">✨</span>
+                  <span *ngIf="!isCustomTypology || !customTypology.trim()">Autre (personnalisée)</span>
+                  <span *ngIf="isCustomTypology && customTypology.trim()" class="custom-card-label">
+                    Autre : <strong>{{ customTypology }}</strong>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- ELEGANT INTEGRATED CUSTOM INPUT DRAWER -->
+            <div *ngIf="isCustomTypology" class="custom-drawer">
+              <div class="custom-drawer-top">
+                <div class="drawer-title-group">
+                  <span class="drawer-badge">Catégorie spécifique</span>
+                  <span class="drawer-label">Précisez l'intitulé de votre typologie :</span>
+                </div>
+                <button type="button" class="btn-cancel-link" (click)="cancelCustomTypology()">
+                  ✕ Annuler et revenir
+                </button>
+              </div>
+
+              <div class="custom-drawer-input-row">
+                <div class="drawer-input-container">
+                  <span class="drawer-input-icon">🏷️</span>
+                  <input 
+                    type="text" 
+                    class="drawer-input" 
+                    placeholder="Ex: Santé Publique, Secourisme d'Urgence, Robotique Médicale, Audiovisuel..." 
+                    [(ngModel)]="customTypology"
+                    (input)="onCustomTypologyInput()"
+                    (keyup.enter)="confirmAndAddCustom()"
+                    autofocus
+                  >
+                  <button 
+                    type="button" 
+                    class="btn btn-primary drawer-submit-btn" 
+                    [disabled]="!customTypology.trim()"
+                    (click)="confirmAndAddCustom()"
+                  >
+                    ✓ Valider
+                  </button>
+                </div>
+              </div>
+
+              <div class="custom-drawer-footer">
+                <span class="drawer-hint">
+                  💡 Votre typologie sera automatiquement enregistrée et transmise à la commission d'agrément.
+                </span>
+                <span *ngIf="customTypology.trim()" class="drawer-live-confirm">
+                  ✓ Sélectionnée en direct
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Logo & Identité visuelle</label>
+            <div class="logo-upload-box">
+              <div class="logo-preview-area" *ngIf="formData.logo_url">
+                <img [src]="formData.logo_url" alt="Aperçu logo" class="logo-preview-img">
+              </div>
+              <div class="logo-inputs">
+                <div class="file-upload-row">
+                  <label class="btn btn-secondary upload-file-btn">
+                    <span>📁 Importer un fichier logo (HD)</span>
+                    <input type="file" accept="image/*" (change)="onFileSelected($event)" style="display:none">
+                  </label>
+                  <span *ngIf="uploadingLogo" class="loading-text">Téléchargement en cours...</span>
+                </div>
+                <div class="url-input-wrap">
+                  <span class="or-separator">ou lien direct :</span>
+                  <input 
+                    type="url" 
+                    class="form-control" 
+                    placeholder="https://... (Lien image ou Drive partagé)" 
+                    [(ngModel)]="formData.logo_url"
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= STEP 2: BUREAU EXÉCUTIF ================= -->
+        <div *ngIf="currentStep === 2" class="step-pane">
+          <div class="section-title-wrap">
+            <span class="section-badge">Section 2</span>
+            <h2 class="section-title">Bureau Exécutif & Membres Fondateurs</h2>
+            <div class="info-callout">
+              <span class="callout-icon">📌</span>
+              <span><strong>Règle recommandée :</strong> Minimum 3 à 5 membres fondateurs inscrits régulièrement pour l'année universitaire en cours.</span>
+            </div>
+          </div>
+
+          <!-- PRESIDENT (LEADER POST) -->
+          <div class="role-card primary-role">
+            <div class="role-header">
+              <div class="role-tag">Poste clé obligatoire</div>
+              <h3 class="role-title">Président(e) du Club</h3>
+            </div>
+            <div class="grid-2">
+              <div class="form-group">
+                <label class="form-label">Nom complet & Prénom <span class="required">*</span></label>
+                <input type="text" class="form-control" placeholder="Nom et prénom" [(ngModel)]="formData.president_name">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Filière / Année d'étude <span class="required">*</span></label>
+                <input type="text" class="form-control" placeholder="Ex: Génie Logiciel - 4ème année" [(ngModel)]="formData.president_filiere">
+              </div>
+            </div>
+            <div class="grid-2">
+              <div class="form-group">
+                <label class="form-label">E-mail universitaire <span class="required">*</span></label>
+                <input type="email" class="form-control" placeholder="prenom.nom@univ-campus.ac.ma" [(ngModel)]="formData.president_email">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Numéro de téléphone (WhatsApp) <span class="required">*</span></label>
+                <input type="tel" class="form-control" placeholder="+212 6 XX XX XX XX" [(ngModel)]="formData.president_phone">
+              </div>
+            </div>
+          </div>
+
+          <!-- TEAM LINES (LIGNES DES MEMBRES DU BUREAU ET MEMBRES FONDATEURS) -->
+          <div class="team-lines-card">
+            <div class="team-lines-top-bar">
+              <div class="team-lines-title-block">
+                <h3 class="team-lines-title">Membres du Bureau Exécutif & Fondateurs</h3>
+                <span class="team-lines-sub">Organisation structurée des responsabilités et coordonnées</span>
+              </div>
+              <button type="button" class="btn btn-secondary btn-sm" (click)="addAdditionalMember()">
+                ➕ Ajouter une ligne de membre
+              </button>
+            </div>
+
+            <div class="team-lines-table">
+              <div class="team-table-head">
+                <div class="head-role">Poste / Rôle</div>
+                <div class="head-name">Nom complet & Prénom</div>
+                <div class="head-filiere">Filière / Année</div>
+                <div class="head-contact">Coordonnées (Email / WhatsApp)</div>
+              </div>
+
+              <!-- VICE PRESIDENT LINE -->
+              <div class="team-table-row">
+                <div class="row-role">
+                  <span class="role-badge badge-vp">Vice-Président(e)</span>
+                </div>
+                <div class="row-input">
+                  <input type="text" class="form-control" placeholder="Nom et prénom du VP" [(ngModel)]="formData.vp_name">
+                </div>
+                <div class="row-input">
+                  <input type="text" class="form-control" placeholder="Filière / Année" [(ngModel)]="formData.vp_filiere">
+                </div>
+                <div class="row-input">
+                  <input type="text" class="form-control" placeholder="Email ou Téléphone" [(ngModel)]="formData.vp_contact">
+                </div>
+              </div>
+
+              <!-- SECRETARY GENERAL LINE -->
+              <div class="team-table-row">
+                <div class="row-role">
+                  <span class="role-badge badge-sg">Secrétaire Général(e)</span>
+                </div>
+                <div class="row-input">
+                  <input type="text" class="form-control" placeholder="Nom et prénom du SG" [(ngModel)]="formData.sg_name">
+                </div>
+                <div class="row-input">
+                  <input type="text" class="form-control" placeholder="Filière / Année" [(ngModel)]="formData.sg_filiere">
+                </div>
+                <div class="row-input">
+                  <input type="text" class="form-control" placeholder="Email ou Téléphone" [(ngModel)]="formData.sg_contact">
+                </div>
+              </div>
+
+              <!-- TREASURER LINE -->
+              <div class="team-table-row">
+                <div class="row-role">
+                  <span class="role-badge badge-tres">Trésorier(ère)</span>
+                </div>
+                <div class="row-input">
+                  <input type="text" class="form-control" placeholder="Nom et prénom du Trésorier" [(ngModel)]="formData.treasurer_name">
+                </div>
+                <div class="row-input">
+                  <input type="text" class="form-control" placeholder="Filière / Année" [(ngModel)]="formData.treasurer_filiere">
+                </div>
+                <div class="row-input">
+                  <input type="text" class="form-control" placeholder="Email ou Téléphone" [(ngModel)]="formData.treasurer_contact">
+                </div>
+              </div>
+
+              <!-- COMM LEAD LINE -->
+              <div class="team-table-row">
+                <div class="row-role">
+                  <span class="role-badge badge-com">Resp. Communication</span>
+                </div>
+                <div class="row-input">
+                  <input type="text" class="form-control" placeholder="Nom et prénom Resp. Com" [(ngModel)]="formData.comm_lead_name">
+                </div>
+                <div class="row-input">
+                  <input type="text" class="form-control" placeholder="Filière / Année" [(ngModel)]="formData.comm_lead_filiere">
+                </div>
+                <div class="row-input">
+                  <input type="text" class="form-control" placeholder="Email ou Téléphone" [(ngModel)]="formData.comm_lead_contact">
+                </div>
+              </div>
+
+              <!-- DYNAMIC ADDITIONAL MEMBERS ROWS -->
+              <div *ngFor="let m of formData.additional_members; let i = index" class="team-table-row dynamic-row">
+                <div class="row-role">
+                  <input type="text" class="form-control custom-role-input" placeholder="Rôle (ex: Logistique)" [(ngModel)]="m.role">
+                </div>
+                <div class="row-input">
+                  <input type="text" class="form-control" placeholder="Nom & Prénom" [(ngModel)]="m.name">
+                </div>
+                <div class="row-input">
+                  <input type="text" class="form-control" placeholder="Filière / Année" [(ngModel)]="m.filiere">
+                </div>
+                <div class="row-input action-cell">
+                  <input type="text" class="form-control" placeholder="Contact" [(ngModel)]="m.contact">
+                  <button type="button" class="btn-del-line" (click)="removeAdditionalMember(i)" title="Supprimer la ligne">✕</button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- FACULTY ADVISOR -->
+          <div class="role-card advisor-card">
+            <div class="role-header">
+              <div class="role-tag advisor-tag">Accompagnement Pédagogique</div>
+              <h3 class="role-title">Parrain / Tuteur pédagogique (Faculty Advisor)</h3>
+            </div>
+            <div class="grid-2">
+              <div class="form-group">
+                <label class="form-label">Nom de l'enseignant ou du membre administratif référent</label>
+                <input type="text" class="form-control" placeholder="Pr. / Dr. / M. / Mme ..." [(ngModel)]="formData.faculty_advisor_name">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Accord de principe obtenu</label>
+                <div class="radio-inline-group">
+                  <label class="radio-option">
+                    <input type="radio" name="advisor_agreement" value="Oui" [(ngModel)]="formData.advisor_agreement">
+                    <span>Oui</span>
+                  </label>
+                  <label class="radio-option">
+                    <input type="radio" name="advisor_agreement" value="En attente" [(ngModel)]="formData.advisor_agreement">
+                    <span>En attente</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= STEP 3: VISION, OBJECTIFS & VALEURS ================= -->
+        <div *ngIf="currentStep === 3" class="step-pane">
+          <div class="section-title-wrap">
+            <span class="section-badge">Section 3</span>
+            <h2 class="section-title">Vision, Objectifs & Valeurs</h2>
+            <p class="section-sub">Précisez le sens, les finalités et la contribution de votre club.</p>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Mission principale <span class="required">*</span></label>
+            <textarea 
+              rows="3" 
+              class="form-control" 
+              placeholder="En 2-3 phrases, quel est le but d'existence du club ?" 
+              [(ngModel)]="formData.main_mission"
+            ></textarea>
+            <span class="form-hint">Exposez clairement la raison d'être et l'ambition centrale du club.</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Objectifs mesurables pour l'année universitaire <span class="required">*</span></label>
+            <textarea 
+              rows="3" 
+              class="form-control" 
+              placeholder="Ex: 3 conférences, 1 tournoi, 200 participants formés, 2 visites de terrain..." 
+              [(ngModel)]="formData.measurable_objectives"
+            ></textarea>
+            <span class="form-hint">Indiquez des indicateurs chiffrés et réalistes (KPIs).</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Valeur ajoutée pour la vie de campus <span class="required">*</span></label>
+            <textarea 
+              rows="3" 
+              class="form-control" 
+              placeholder="Pourquoi ce club est-il indispensable ? En quoi se distingue-t-il des clubs déjà existants ?" 
+              [(ngModel)]="formData.campus_value_add"
+            ></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Public cible <span class="required">*</span></label>
+            <div class="audience-options">
+              <label class="audience-card" [class.selected]="formData.target_audience_type === 'Ouvert à toute l\'université'">
+                <input 
+                  type="radio" 
+                  name="audience_type" 
+                  value="Ouvert à toute l'université" 
+                  [(ngModel)]="formData.target_audience_type"
+                >
+                <div class="audience-info">
+                  <strong>Ouvert à toute l'université</strong>
+                  <span>Accessible sans restriction à tous les étudiants inscrits de tout cycle/campus.</span>
+                </div>
+              </label>
+
+              <label class="audience-card" [class.selected]="formData.target_audience_type === 'Spécifique à certains cycles/filières'">
+                <input 
+                  type="radio" 
+                  name="audience_type" 
+                  value="Spécifique à certains cycles/filières" 
+                  [(ngModel)]="formData.target_audience_type"
+                >
+                <div class="audience-info">
+                  <strong>Spécifique à certains cycles/filières</strong>
+                  <span>Orienté vers des spécialités particulières.</span>
+                </div>
+              </label>
+            </div>
+
+            <div *ngIf="formData.target_audience_type === 'Spécifique à certains cycles/filières'" class="mt-3">
+              <label class="form-label">Préciser les cycles ou filières visés :</label>
+              <input 
+                type="text" 
+                class="form-control" 
+                placeholder="Ex: Étudiants en Master & Doctorat, Cycle Ingénieur uniquement..." 
+                [(ngModel)]="formData.target_audience_details"
+              >
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= STEP 4: PLAN D'ACTION ANNUEL ================= -->
+        <div *ngIf="currentStep === 4" class="step-pane">
+          <div class="section-title-wrap">
+            <span class="section-badge">Section 4</span>
+            <h2 class="section-title">Plan d'Action Annuel Prévisionnel</h2>
+            <p class="section-sub">Détaillez les événements structurants et le rythme de travail du bureau.</p>
+          </div>
+
+          <!-- EVENT 1 -->
+          <div class="event-card">
+            <div class="event-header">
+              <span class="event-badge">Semestre 1</span>
+              <h3 class="event-title">Événement Phare #1</h3>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Titre de l'activité / Description <span class="required">*</span></label>
+              <input type="text" class="form-control" placeholder="Titre de l'événement" [(ngModel)]="formData.event1_title">
+            </div>
+
+            <div class="form-group">
+              <textarea 
+                rows="2" 
+                class="form-control" 
+                placeholder="Description détaillée du déroulement, du contenu et du public attendu..." 
+                [(ngModel)]="formData.event1_description"
+              ></textarea>
+            </div>
+
+            <div class="grid-2">
+              <div class="form-group">
+                <label class="form-label">Date estimée</label>
+                <input type="date" class="form-control" [(ngModel)]="formData.event1_date">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Besoins logistiques prévisibles</label>
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  placeholder="Amphithéâtre, sono, projecteur, tables, etc." 
+                  [(ngModel)]="formData.event1_logistics"
+                >
+              </div>
+            </div>
+          </div>
+
+          <!-- EVENT 2 -->
+          <div class="event-card">
+            <div class="event-header">
+              <span class="event-badge s2">Semestre 2</span>
+              <h3 class="event-title">Événement Phare #2</h3>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Titre de l'activité / Description</label>
+              <input type="text" class="form-control" placeholder="Titre de l'événement" [(ngModel)]="formData.event2_title">
+            </div>
+
+            <div class="form-group">
+              <textarea 
+                rows="2" 
+                class="form-control" 
+                placeholder="Description détaillée du projet du Semestre 2..." 
+                [(ngModel)]="formData.event2_description"
+              ></textarea>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Date estimée</label>
+              <input type="date" class="form-control" [(ngModel)]="formData.event2_date">
+            </div>
+          </div>
+
+          <!-- MEETING FREQUENCY -->
+          <div class="form-group mt-4">
+            <label class="form-label">Rythme des réunions internes du club</label>
+            <div class="frequency-chips">
+              <div 
+                *ngFor="let freq of meetingFrequencies" 
+                class="frequency-chip"
+                [class.selected]="formData.meeting_frequency === freq"
+                (click)="formData.meeting_frequency = freq"
+              >
+                <span>{{ freq }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= STEP 5: ENGAGEMENT & SIGNATURE ================= -->
+        <div *ngIf="currentStep === 5" class="step-pane">
+          <div class="section-title-wrap">
+            <span class="section-badge">Section 5</span>
+            <h2 class="section-title">Engagement, Signature & Récapitulatif</h2>
+            <p class="section-sub">Vérifiez les données du dossier avant soumission officielle.</p>
+          </div>
+
+          <!-- SUMMARY PREVIEW ACCORDION / CARDS -->
+          <div class="summary-box">
+            <h3 class="summary-heading">📋 Récapitulatif du Dossier</h3>
+            
+            <div class="summary-grid">
+              <div class="summary-card">
+                <span class="summary-label">Nom du Club :</span>
+                <strong>{{ formData.official_name }} ({{ formData.acronym || 'N/A' }})</strong>
+              </div>
+              <div class="summary-card">
+                <span class="summary-label">Typologie :</span>
+                <span>{{ formData.typology }}</span>
+              </div>
+              <div class="summary-card">
+                <span class="summary-label">Président(e) :</span>
+                <span>{{ formData.president_name }} ({{ formData.president_filiere }})</span>
+              </div>
+              <div class="summary-card">
+                <span class="summary-label">Contact :</span>
+                <span>{{ formData.president_email }} | {{ formData.president_phone }}</span>
+              </div>
+              <div class="summary-card">
+                <span class="summary-label">Tuteur pédagogique :</span>
+                <span>{{ formData.faculty_advisor_name || 'Non renseigné' }} (Accord: {{ formData.advisor_agreement }})</span>
+              </div>
+              <div class="summary-card">
+                <span class="summary-label">Réunions internes :</span>
+                <strong>{{ formData.meeting_frequency }}</strong>
+              </div>
+            </div>
+
+            <div class="summary-full">
+              <span class="summary-label">Mission :</span>
+              <p>{{ formData.main_mission }}</p>
+            </div>
+          </div>
+
+          <!-- COMMITMENT CHECKBOXES -->
+          <div class="commitments-box">
+            <label class="commitment-item">
+              <input type="checkbox" [(ngModel)]="formData.honor_declaration">
+              <div class="commitment-text">
+                <strong>Je certifie sur l'honneur l'exactitude des informations fournies.</strong>
+                <span>Toute fausse déclaration expose le club à l'annulation de son dossier.</span>
+              </div>
+            </label>
+
+            <label class="commitment-item">
+              <input type="checkbox" [(ngModel)]="formData.charter_agreement">
+              <div class="commitment-text">
+                <strong>Engagement au respect des valeurs et directives universitaires.</strong>
+                <span>Le bureau exécutif s'engage à respecter le règlement intérieur de l'université, la charte éthique et les directives de la vie étudiante.</span>
+              </div>
+            </label>
+          </div>
+
+          <!-- SIGNATURE -->
+          <div class="grid-2 mt-4">
+            <div class="form-group">
+              <label class="form-label">Nom complet du déclarant <span class="required">*</span></label>
+              <input 
+                type="text" 
+                class="form-control" 
+                placeholder="Nom complet" 
+                [(ngModel)]="formData.declarant_name"
+              >
+            </div>
+            <div class="form-group">
+              <label class="form-label">Date de soumission</label>
+              <input 
+                type="date" 
+                class="form-control" 
+                [(ngModel)]="formData.submission_date"
+              >
+            </div>
+          </div>
+        </div>
+
+        <!-- STEPPER FOOTER BUTTONS -->
+        <div class="form-footer">
+          <button 
+            type="button" 
+            class="btn btn-secondary" 
+            *ngIf="currentStep > 1" 
+            (click)="prevStep()"
+          >
+            ← Étape Précédente
+          </button>
+
+          <div class="footer-spacer"></div>
+
+          <button 
+            type="button" 
+            class="btn btn-primary" 
+            *ngIf="currentStep < 5" 
+            (click)="nextStep()"
+          >
+            Étape Suivante →
+          </button>
+
+          <button 
+            type="button" 
+            class="btn btn-success submit-btn" 
+            *ngIf="currentStep === 5" 
+            [disabled]="isSubmitting || !formData.honor_declaration || !formData.charter_agreement"
+            (click)="submitApplication()"
+          >
+            <span *ngIf="!isSubmitting">🚀 Soumettre Officiellement la Demande</span>
+            <span *ngIf="isSubmitting">Enregistrement en cours...</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+

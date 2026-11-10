@@ -1,0 +1,434 @@
+<div class="admin-page">
+  <div class="container">
+
+    <!-- Header -->
+    <div class="admin-header">
+      <div>
+        <span class="sub-badge">Espace Administratif</span>
+        <h1 class="page-title">Commission de Validation des Clubs</h1>
+        <p class="page-desc">Instruction, examen collégial et agrément des nouveaux clubs étudiants.</p>
+      </div>
+      <div class="admin-top-actions">
+        <button type="button" class="btn btn-secondary" (click)="loadData()">
+          🔄 Actualiser
+        </button>
+      </div>
+    </div>
+
+    <!-- STATS METRICS BAR -->
+    <div class="stats-grid" *ngIf="stats">
+      <div class="stat-card">
+        <div class="stat-icon icon-total">📁</div>
+        <div class="stat-content">
+          <span class="stat-value">{{ stats.total }}</span>
+          <span class="stat-title">Total Dossiers</span>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon icon-pending">⏳</div>
+        <div class="stat-content">
+          <span class="stat-value">{{ stats.pending }}</span>
+          <span class="stat-title">En Attente / Revue</span>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon icon-approved">✅</div>
+        <div class="stat-content">
+          <span class="stat-value">{{ stats.approved }}</span>
+          <span class="stat-title">Clubs Agréés</span>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon icon-changes">✏️</div>
+        <div class="stat-content">
+          <span class="stat-value">{{ stats.changesRequested }}</span>
+          <span class="stat-title">Retouches Requises</span>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon icon-budget">💵</div>
+        <div class="stat-content">
+          <span class="stat-value">{{ stats.budgetSum | number }} MAD</span>
+          <span class="stat-title">Budget Sollicité</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- FILTER BAR -->
+    <div class="filter-card card mt-4">
+      <div class="filter-row">
+        <div class="filter-col flex-2">
+          <label class="filter-label">Recherche</label>
+          <input 
+            type="text" 
+            class="form-control" 
+            placeholder="Nom du club, président, code..." 
+            [(ngModel)]="searchQuery"
+            (keyup.enter)="applyFilters()"
+          >
+        </div>
+
+        <div class="filter-col flex-1">
+          <label class="filter-label">Statut</label>
+          <select class="form-select" [(ngModel)]="filterStatus" (change)="applyFilters()">
+            <option value="ALL">Tous les statuts</option>
+            <option value="SOUMIS">Soumis</option>
+            <option value="EN_COURS_DE_REVUE">En cours de revue</option>
+            <option value="APPROUVE">Approuvé</option>
+            <option value="RETOUCHE_DEMANDEE">Retouche demandée</option>
+            <option value="REFUSE">Refusé</option>
+          </select>
+        </div>
+
+        <div class="filter-col flex-1">
+          <label class="filter-label">Typologie</label>
+          <select class="form-select" [(ngModel)]="filterTypology" (change)="applyFilters()">
+            <option value="ALL">Toutes les typologies</option>
+            <option *ngFor="let typ of typologies" [value]="typ">{{ typ }}</option>
+          </select>
+        </div>
+
+        <div class="filter-col-actions">
+          <button type="button" class="btn btn-primary" (click)="applyFilters()">Filtrer</button>
+          <button type="button" class="btn btn-outline" (click)="resetFilters()">Réinitialiser</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CLUBS TABLE -->
+    <div class="card table-card mt-4">
+      <div class="table-header">
+        <h3 class="table-title">Dossiers d'Enregistrement ({{ clubs.length }})</h3>
+      </div>
+
+      <div class="table-responsive" *ngIf="clubs.length > 0">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Réf. & Club</th>
+              <th>Typologie</th>
+              <th>Président(e) & Filière</th>
+              <th>Budget</th>
+              <th>Statut</th>
+              <th>Date Déposée</th>
+              <th class="text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let c of clubs">
+              <td>
+                <div class="club-cell">
+                  <div class="table-logo" *ngIf="c.logo_url">
+                    <img [src]="c.logo_url" alt="">
+                  </div>
+                  <div>
+                    <span class="ref-tag">{{ c.tracking_code }}</span>
+                    <strong class="club-name">{{ c.official_name }}</strong>
+                    <span class="club-acronym" *ngIf="c.acronym">({{ c.acronym }})</span>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <span class="typ-badge">{{ c.typology }}</span>
+              </td>
+              <td>
+                <div class="pres-name">{{ c.president_name }}</div>
+                <div class="pres-sub">{{ c.president_filiere }}</div>
+              </td>
+              <td>
+                <strong>{{ c.annual_budget_mad | number }} MAD</strong>
+              </td>
+              <td>
+                <span class="badge" [ngClass]="getStatusBadgeClass(c.status)">
+                  {{ getStatusLabel(c.status) }}
+                </span>
+              </td>
+              <td class="text-muted">
+                {{ c.submission_date }}
+              </td>
+              <td class="text-right">
+                <button type="button" class="btn btn-outline btn-sm" (click)="openReviewModal(c)">
+                  🔍 Examiner & Décider
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="empty-state" *ngIf="clubs.length === 0 && !loading">
+        <div class="empty-icon">📭</div>
+        <h4>Aucun dossier trouvé</h4>
+        <p class="text-muted">Aucune demande ne correspond à vos critères de recherche ou de filtre.</p>
+      </div>
+
+      <div class="loading-state" *ngIf="loading">
+        <p>Chargement des dossiers en cours...</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ================= MODAL DE REVUE & DÉCISION ================= -->
+<div class="modal-overlay" *ngIf="selectedClub" (click)="closeModal()">
+  <div class="modal-box card" (click)="$event.stopPropagation()">
+
+    <!-- MODAL HEADER -->
+    <div class="modal-header">
+      <div>
+        <div class="modal-pill">{{ selectedClub.tracking_code }}</div>
+        <h2 class="modal-title">{{ selectedClub.official_name }}</h2>
+        <span class="text-muted">{{ selectedClub.typology }}</span>
+      </div>
+      <div class="modal-header-actions">
+        <button 
+          type="button" 
+          class="btn btn-outline btn-sm" 
+          *ngIf="selectedClub.members && selectedClub.members.length > 0" 
+          (click)="exportMembersCsv()"
+          title="Exporter la liste des membres au format CSV"
+        >
+          📥 Exporter Membres (CSV)
+        </button>
+        <button type="button" class="btn btn-outline btn-sm" (click)="printDossier()">🖨️ Imprimer</button>
+        <button type="button" class="btn-close" (click)="closeModal()">✕</button>
+      </div>
+    </div>
+
+    <!-- MODAL BODY -->
+    <div class="modal-body">
+
+      <!-- SUCCESS NOTICE -->
+      <div *ngIf="successNotice" class="alert alert-success">
+        <span>✅</span>
+        <span>{{ successNotice }}</span>
+      </div>
+
+      <!-- COMMISSION DECISION FORM -->
+      <div class="decision-box">
+        <h3 class="decision-heading">🏛️ Avis & Décision de la Commission</h3>
+
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label">Statut d'instruction :</label>
+            <select class="form-select status-select" [(ngModel)]="reviewStatus">
+              <option value="APPROUVE">✅ Approuver / Agréer le club</option>
+              <option value="EN_COURS_DE_REVUE">⏳ Mettre en cours d'instruction</option>
+              <option value="RETOUCHE_DEMANDEE">✏️ Demander des retouches / compléments</option>
+              <option value="REFUSE">❌ Refuser la demande</option>
+              <option value="SOUMIS">📥 Laisser en Soumis</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Examinateur / Organe :</label>
+            <input type="text" class="form-control" [(ngModel)]="reviewerName">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Remarques motivées, conditions ou réserves (visibles par les étudiants) :</label>
+          <textarea 
+            rows="3" 
+            class="form-control" 
+            placeholder="Ex: Dossier validé. Veuillez transmettre les fiches d'adhésion au service de la vie étudiante avant le 15 décembre."
+            [(ngModel)]="reviewNotes"
+          ></textarea>
+        </div>
+
+        <div class="decision-actions">
+          <button 
+            type="button" 
+            class="btn btn-primary" 
+            [disabled]="isUpdating"
+            (click)="saveDecision()"
+          >
+            <span *ngIf="!isUpdating">💾 Enregistrer la Décision</span>
+            <span *ngIf="isUpdating">Enregistrement...</span>
+          </button>
+
+          <button 
+            type="button" 
+            class="btn btn-danger btn-sm" 
+            (click)="deleteApplication(selectedClub.id)"
+          >
+            🗑️ Supprimer le dossier
+          </button>
+        </div>
+      </div>
+
+      <!-- DOSSIER SECTIONS REVIEW -->
+      <div class="dossier-full-review mt-4">
+
+        <!-- 1. IDENTITE -->
+        <div class="review-section">
+          <h4 class="review-sec-title">1. Identité du Club</h4>
+          <div class="review-grid">
+            <div><strong>Nom officiel :</strong> {{ selectedClub.official_name }}</div>
+            <div><strong>Sigle :</strong> {{ selectedClub.acronym || 'N/A' }}</div>
+            <div><strong>Slogan :</strong> {{ selectedClub.slogan || 'N/A' }}</div>
+            <div><strong>Typologie :</strong> {{ selectedClub.typology }}</div>
+          </div>
+        </div>
+
+        <!-- 2. BUREAU -->
+        <div class="review-section">
+          <h4 class="review-sec-title">2. Bureau Exécutif & Parrainage</h4>
+          <div class="review-grid">
+            <div class="board-card highlight">
+              <span class="board-role">Président(e)</span>
+              <strong>{{ selectedClub.president_name }}</strong>
+              <div class="text-muted">{{ selectedClub.president_filiere }}</div>
+              <div>{{ selectedClub.president_email }} | {{ selectedClub.president_phone }}</div>
+            </div>
+
+            <div class="board-card" *ngIf="selectedClub.vp_name">
+              <span class="board-role">Vice-Président(e)</span>
+              <strong>{{ selectedClub.vp_name }}</strong>
+              <div class="text-muted">{{ selectedClub.vp_filiere }}</div>
+              <div>{{ selectedClub.vp_contact }}</div>
+            </div>
+
+            <div class="board-card" *ngIf="selectedClub.sg_name">
+              <span class="board-role">Secrétaire Général(e)</span>
+              <strong>{{ selectedClub.sg_name }}</strong>
+              <div class="text-muted">{{ selectedClub.sg_filiere }}</div>
+              <div>{{ selectedClub.sg_contact }}</div>
+            </div>
+
+            <div class="board-card" *ngIf="selectedClub.treasurer_name">
+              <span class="board-role">Trésorier(ère)</span>
+              <strong>{{ selectedClub.treasurer_name }}</strong>
+              <div class="text-muted">{{ selectedClub.treasurer_filiere }}</div>
+              <div>{{ selectedClub.treasurer_contact }}</div>
+            </div>
+
+            <div class="board-card" *ngIf="selectedClub.comm_lead_name">
+              <span class="board-role">Resp. Com</span>
+              <strong>{{ selectedClub.comm_lead_name }}</strong>
+              <div class="text-muted">{{ selectedClub.comm_lead_filiere }}</div>
+              <div>{{ selectedClub.comm_lead_contact }}</div>
+            </div>
+          </div>
+
+          <div class="advisor-review mt-3" *ngIf="selectedClub.faculty_advisor_name">
+            <strong>Faculty Advisor :</strong> {{ selectedClub.faculty_advisor_name }} 
+            <span class="advisor-tag">Accord : {{ selectedClub.advisor_agreement }}</span>
+          </div>
+        </div>
+
+        <!-- 3. VISION & OBJECTIFS -->
+        <div class="review-section">
+          <h4 class="review-sec-title">3. Vision & Objectifs</h4>
+          <div class="text-block">
+            <strong>Mission :</strong>
+            <p>{{ selectedClub.main_mission }}</p>
+          </div>
+          <div class="text-block mt-2">
+            <strong>Objectifs Chiffrés :</strong>
+            <p class="whitespace-pre">{{ selectedClub.measurable_objectives }}</p>
+          </div>
+          <div class="text-block mt-2">
+            <strong>Valeur Ajoutée Campus :</strong>
+            <p>{{ selectedClub.campus_value_add }}</p>
+          </div>
+          <div class="text-block mt-2">
+            <strong>Public Cible :</strong>
+            <p>{{ selectedClub.target_audience_type }} {{ selectedClub.target_audience_details ? '(' + selectedClub.target_audience_details + ')' : '' }}</p>
+          </div>
+        </div>
+
+        <!-- 4. PLAN D'ACTION -->
+        <div class="review-section">
+          <h4 class="review-sec-title">4. Plan d'Action Annuel</h4>
+          <div class="grid-2">
+            <div class="event-box" *ngIf="selectedClub.event1_title">
+              <span class="event-tag">Semestre 1</span>
+              <h5>{{ selectedClub.event1_title }}</h5>
+              <p>{{ selectedClub.event1_description }}</p>
+              <div class="text-muted">Date : {{ selectedClub.event1_date || 'Non fixée' }}</div>
+              <div class="text-muted">Besoins : {{ selectedClub.event1_logistics || 'Standards' }}</div>
+            </div>
+
+            <div class="event-box" *ngIf="selectedClub.event2_title">
+              <span class="event-tag">Semestre 2</span>
+              <h5>{{ selectedClub.event2_title }}</h5>
+              <p>{{ selectedClub.event2_description }}</p>
+              <div class="text-muted">Date : {{ selectedClub.event2_date || 'Non fixée' }}</div>
+            </div>
+          </div>
+          <div class="mt-2 text-muted">
+            Rythme des réunions internes : <strong>{{ selectedClub.meeting_frequency }}</strong>
+          </div>
+        </div>
+
+        <!-- 5. BUDGET -->
+        <div class="review-section">
+          <h4 class="review-sec-title">5. Budget & Ressources</h4>
+          <div class="budget-badge-val">
+            Budget Annuel : <strong>{{ selectedClub.annual_budget_mad | number }} MAD</strong>
+          </div>
+          <div class="mt-2">
+            <strong>Financement :</strong>
+            <span *ngFor="let s of selectedClub.funding_sources" class="badge badge-submitted mr-1">{{ s }}</span>
+          </div>
+          <div class="mt-2" *ngIf="selectedClub.facility_needs">
+            <strong>Besoins permanents/espaces :</strong> {{ selectedClub.facility_needs }}
+          </div>
+        </div>
+
+        <!-- 6. ENGAGEMENT -->
+        <div class="review-section">
+          <h4 class="review-sec-title">6. Engagement</h4>
+          <div>Déclarant : <strong>{{ selectedClub.declarant_name }}</strong> le {{ selectedClub.submission_date }}</div>
+          <div class="text-success mt-1">✓ Déclaration sur l'honneur validée & acceptation de la charte de vie étudiante.</div>
+        </div>
+
+        <!-- 7. MEMBRES ADHÉRENTS (QR CODE) -->
+        <div class="review-section" *ngIf="selectedClub.members && selectedClub.members.length > 0">
+          <h4 class="review-sec-title">
+            👥 Membres Adhérents Inscrits via QR Code ({{ selectedClub.members.length }})
+          </h4>
+          <div style="overflow-x: auto;">
+            <table class="table" style="font-size: 0.85rem; width: 100%;">
+              <thead>
+                <tr style="text-align: left; background: #f8fafc; border-bottom: 2px solid var(--border-color);">
+                  <th style="padding: 0.6rem;">Étudiant(e)</th>
+                  <th style="padding: 0.6rem;">Faculté & Niveau</th>
+                  <th style="padding: 0.6rem;">Loisir</th>
+                  <th style="padding: 0.6rem;">Compétence</th>
+                  <th style="padding: 0.6rem;">Idée de projet</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let m of selectedClub.members" style="border-bottom: 1px solid var(--border-color);">
+                  <td style="padding: 0.6rem;">
+                    <strong>{{ m.full_name }}</strong>
+                    <div *ngIf="m.email" class="text-muted" style="font-size: 0.75rem;">{{ m.email }}</div>
+                  </td>
+                  <td style="padding: 0.6rem;">{{ m.filiere }}<br><small class="text-muted">{{ m.academic_year }}</small></td>
+                  <td style="padding: 0.6rem;">{{ m.loisir }}</td>
+                  <td style="padding: 0.6rem;">{{ m.competence }}</td>
+                  <td style="padding: 0.6rem;"><em>{{ m.project_idea || '—' }}</em></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" (click)="closeModal()">Fermer</button>
+    </div>
+
+  </div>
+</div>
+
