@@ -94,9 +94,9 @@ import { ClubApplication, ClubMember } from '../../models/club.model';
                 type="button" 
                 class="members-count-pill" 
                 (click)="openMembersModal(c)" 
-                title="Cliquer pour afficher la liste des membres inscrits"
+                title="Cliquer pour afficher la liste des adhérents inscrits"
               >
-                👥 <strong>{{ c.members_count || 0 }}</strong> membre{{ (c.members_count || 0) > 1 ? 's' : '' }}
+                👥 <strong>{{ c.members_count || 0 }}</strong> adhérent{{ (c.members_count || 0) > 1 ? 's' : '' }}
               </button>
             </div>
 
@@ -150,11 +150,19 @@ import { ClubApplication, ClubMember } from '../../models/club.model';
               </div>
             </div>
 
-            <!-- Primary Student Actions (Join, Sheet, QR) -->
+            <!-- Primary Student Actions (Join, Adherents List, Sheet PDF, QR) -->
             <div class="card-primary-actions">
-              <a [routerLink]="['/rejoindre', c.id]" class="btn-cta-join" title="Rejoindre ce club en tant que membre">
+              <a [routerLink]="['/rejoindre', c.id]" class="btn-cta-join" title="Rejoindre ce club en tant qu'adhérent">
                 ✍️ Rejoindre
               </a>
+              <button 
+                type="button" 
+                class="btn-action-outline btn-adherents" 
+                (click)="openMembersModal(c)" 
+                title="Consulter et gérer la liste complète des adhérents inscrits"
+              >
+                👥 Adhérents ({{ c.members_count || 0 }})
+              </button>
               <button 
                 type="button" 
                 class="btn-action-outline btn-sheet" 
@@ -1315,11 +1323,11 @@ import { ClubApplication, ClubMember } from '../../models/club.model';
       text-overflow: ellipsis;
     }
 
-    /* Primary Actions */
+    /* Primary Actions Grid (2x2) */
     .card-primary-actions {
       display: grid;
-      grid-template-columns: 1.4fr 1fr 0.9fr;
-      gap: 0.45rem;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
       margin-bottom: 0.85rem;
     }
     .btn-cta-join {
@@ -1327,7 +1335,7 @@ import { ClubApplication, ClubMember } from '../../models/club.model';
       color: #ffffff;
       padding: 0.55rem 0.75rem;
       border-radius: 10px;
-      font-size: 0.84rem;
+      font-size: 0.82rem;
       font-weight: 700;
       text-align: center;
       display: inline-flex;
@@ -1356,6 +1364,18 @@ import { ClubApplication, ClubMember } from '../../models/club.model';
       transition: all 0.15s ease;
       cursor: pointer;
       white-space: nowrap;
+    }
+    .btn-action-outline.btn-adherents {
+      background: #eff6ff;
+      border: 1.5px solid #3b82f6;
+      color: #1d4ed8;
+      font-weight: 700;
+    }
+    .btn-action-outline.btn-adherents:hover {
+      background: #3b82f6;
+      color: #ffffff;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 10px rgba(59, 130, 246, 0.25);
     }
     .btn-action-outline.btn-sheet {
       background: #f0fdf4;
