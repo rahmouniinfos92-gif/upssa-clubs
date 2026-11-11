@@ -77,77 +77,97 @@ import { ClubApplication, ClubMember } from '../../models/club.model';
 
         <!-- Clubs Grid -->
         <div class="clubs-grid mt-4" *ngIf="filteredClubs.length > 0">
-          <div *ngFor="let c of filteredClubs" class="card club-card">
+          <div *ngFor="let c of filteredClubs" class="club-card-v2">
             
-            <div class="club-card-top">
-              <div class="club-card-logo" *ngIf="c.logo_url">
-                <img [src]="c.logo_url" alt="{{ c.official_name }}">
-              </div>
-              <div class="club-card-info">
-                <div class="club-cat-row">
-                  <span class="club-cat">{{ c.typology }}</span>
-                  <button 
-                    type="button" 
-                    class="members-badge-btn" 
-                    (click)="openMembersModal(c)" 
-                    title="Cliquer pour visualiser tous les membres de ce club"
-                  >
-                    👥 {{ c.members_count || 0 }} membre{{ (c.members_count || 0) > 1 ? 's' : '' }}
-                  </button>
-                </div>
-                <h3 class="club-name">{{ c.official_name }}</h3>
-                <span class="club-acronym" *ngIf="c.acronym">{{ c.acronym }}</span>
-              </div>
-            </div>
-
-            <p class="club-slogan" *ngIf="c.slogan">« {{ c.slogan }} »</p>
-
-            <p class="club-mission">{{ c.main_mission }}</p>
-
-            <div class="club-activities" *ngIf="c.event1_title">
-              <span class="activity-label">Prochain événement :</span>
-              <strong class="activity-name">✨ {{ c.event1_title }}</strong>
-            </div>
-
-            <div class="club-footer">
-              <div class="club-pres">
-                <span class="pres-lbl">Président(e) :</span>
-                <strong>{{ c.president_name }}</strong>
-                <span class="pres-filiere">({{ c.president_filiere }})</span>
-              </div>
-              <div class="pres-contact-info">
-                <span class="pres-advisor" *ngIf="c.faculty_advisor_name">
-                  🎓 Tuteur : {{ c.faculty_advisor_name }}
+            <!-- Top Status Bar & Category -->
+            <div class="card-top-bar">
+              <div class="category-pill-group">
+                <span class="cat-pill">
+                  <span class="cat-icon">{{ getCategoryIcon(c.typology) }}</span>
+                  <span class="cat-text">{{ c.typology }}</span>
+                </span>
+                <span class="verified-accreditation-pill" title="Club officiellement agréé par la Commission de l'UPSSA">
+                  ✓ Agréé
                 </span>
               </div>
+              <button 
+                type="button" 
+                class="members-count-pill" 
+                (click)="openMembersModal(c)" 
+                title="Cliquer pour afficher la liste des membres inscrits"
+              >
+                👥 <strong>{{ c.members_count || 0 }}</strong> membre{{ (c.members_count || 0) > 1 ? 's' : '' }}
+              </button>
             </div>
 
-            <!-- Join & Members Action Bar -->
-            <div class="club-join-bar">
-              <a [routerLink]="['/rejoindre', c.id]" class="btn-join-member" title="Rejoindre ce club en tant que membre">
+            <!-- Identity Header (Logo + Names) -->
+            <div class="card-identity-row">
+              <div class="card-avatar-box">
+                <img *ngIf="c.logo_url" [src]="c.logo_url" [alt]="c.official_name" class="club-avatar-img">
+                <div *ngIf="!c.logo_url" class="club-avatar-fallback">
+                  {{ c.acronym || getInitials(c.official_name) }}
+                </div>
+              </div>
+              <div class="card-title-group">
+                <h3 class="card-club-title" [title]="c.official_name">{{ c.official_name }}</h3>
+                <div class="card-badges-sub">
+                  <span class="acronym-tag" *ngIf="c.acronym">{{ c.acronym }}</span>
+                  <span class="tracking-code-tag" *ngIf="c.tracking_code">{{ c.tracking_code }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slogan & Mission Body -->
+            <div class="card-body-content">
+              <p class="club-slogan-styled" *ngIf="c.slogan">
+                <span class="quote-mark">“</span>{{ c.slogan }}<span class="quote-mark">”</span>
+              </p>
+              <p class="club-mission-text" [title]="c.main_mission">
+                {{ c.main_mission }}
+              </p>
+            </div>
+
+            <!-- Next Major Event Banner (if available) -->
+            <div class="card-event-banner" *ngIf="c.event1_title">
+              <div class="event-icon-badge">📅</div>
+              <div class="event-details">
+                <span class="event-pre-label">Prochain événement phare</span>
+                <strong class="event-title-text">{{ c.event1_title }}</strong>
+              </div>
+            </div>
+
+            <!-- Supervision & Executive Info Grid -->
+            <div class="card-supervision-grid">
+              <div class="sup-item">
+                <span class="sup-label">👤 Président(e)</span>
+                <strong class="sup-name">{{ c.president_name }}</strong>
+                <span class="sup-sub" *ngIf="c.president_filiere">{{ c.president_filiere }}</span>
+              </div>
+              <div class="sup-item">
+                <span class="sup-label">🎓 Tuteur Référent</span>
+                <strong class="sup-name">{{ c.faculty_advisor_name || 'Dr. Loubna Agouzal' }}</strong>
+                <span class="sup-sub">Enseignant UPSSA</span>
+              </div>
+            </div>
+
+            <!-- Primary Student Actions (Join, Sheet, QR) -->
+            <div class="card-primary-actions">
+              <a [routerLink]="['/rejoindre', c.id]" class="btn-cta-join" title="Rejoindre ce club en tant que membre">
                 ✍️ Rejoindre
               </a>
               <button 
                 type="button" 
-                class="btn-members-view" 
-                (click)="openMembersModal(c)" 
-                title="Visualiser et consulter la liste des membres de ce club"
-              >
-                👥 Membres ({{ c.members_count || 0 }})
-              </button>
-              <button 
-                type="button" 
-                class="btn-sheet-pdf" 
+                class="btn-action-outline btn-sheet" 
                 (click)="downloadClubSheet(c)" 
                 [disabled]="downloadingSheetClubId === c.id"
-                title="Télécharger la Fiche Officielle d'Agrément du Club au format PDF"
+                title="Télécharger la Fiche Officielle d'Agrément (PDF)"
               >
                 <span *ngIf="downloadingSheetClubId !== c.id">📄 Fiche PDF</span>
                 <span *ngIf="downloadingSheetClubId === c.id">⏳ ...</span>
               </button>
               <button 
                 type="button" 
-                class="btn-qr-view" 
+                class="btn-action-outline btn-qr" 
                 (click)="openQrModal(c)" 
                 title="Afficher et scanner le QR code pour rejoindre"
               >
@@ -155,23 +175,15 @@ import { ClubApplication, ClubMember } from '../../models/club.model';
               </button>
             </div>
 
-            <!-- Card Management Actions (Edit & Delete) -->
-            <div class="club-actions-bar">
-              <div class="contact-pill">
-                <a [href]="'mailto:' + c.president_email" title="Contacter">📧 Contacter</a>
-              </div>
-              <div class="card-mgmt-btns">
+            <!-- Management & Contact Bottom Strip -->
+            <div class="card-bottom-strip">
+              <a [href]="'mailto:' + c.president_email" class="contact-email-btn" title="Envoyer un email au bureau du club">
+                ✉️ Contacter
+              </a>
+              <div class="mgmt-actions-group">
                 <button 
                   type="button" 
-                  class="btn-card-action btn-sheet-pdf-alt" 
-                  (click)="downloadClubSheet(c)" 
-                  title="Télécharger la fiche officielle d'agrément"
-                >
-                  📄 Fiche
-                </button>
-                <button 
-                  type="button" 
-                  class="btn-card-action btn-edit" 
+                  class="btn-mgmt btn-edit" 
                   (click)="openEditModal(c)" 
                   title="Modifier les informations de ce club"
                 >
@@ -179,11 +191,11 @@ import { ClubApplication, ClubMember } from '../../models/club.model';
                 </button>
                 <button 
                   type="button" 
-                  class="btn-card-action btn-delete" 
+                  class="btn-mgmt btn-delete" 
                   (click)="openDeleteModal(c)" 
                   title="Supprimer ce club de l'annuaire"
                 >
-                  🗑️ Supprimer
+                  🗑️
                 </button>
               </div>
             </div>
@@ -1020,309 +1032,406 @@ import { ClubApplication, ClubMember } from '../../models/club.model';
     }
     .clubs-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-      gap: 1.5rem;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: 1.75rem;
     }
-    .club-card {
+    .club-card-v2 {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 18px;
+      padding: 1.5rem;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
-      border-top: 4px solid var(--primary);
       position: relative;
-    }
-    .club-card-top {
-      display: flex;
-      gap: 1rem;
-      align-items: center;
-      margin-bottom: 0.85rem;
-    }
-    .club-card-logo {
-      width: 56px;
-      height: 56px;
-      border-radius: 12px;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 4px 15px -3px rgba(0, 56, 68, 0.05), 0 2px 6px -2px rgba(0, 56, 68, 0.03);
       overflow: hidden;
-      border: 1px solid var(--border-color);
-      flex-shrink: 0;
-      background: #f8fafc;
     }
-    .club-card-logo img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
+    .club-card-v2::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #009aa6 0%, #028090 50%, #003844 100%);
     }
-    .club-cat-row {
+    .club-card-v2:hover {
+      transform: translateY(-5px);
+      border-color: #009aa6;
+      box-shadow: 0 16px 30px -6px rgba(0, 56, 68, 0.12), 0 4px 12px -2px rgba(0, 56, 68, 0.06);
+    }
+
+    /* Top Bar */
+    .card-top-bar {
       display: flex;
       justify-content: space-between;
       align-items: center;
       gap: 0.5rem;
-      margin-bottom: 0.2rem;
+      margin-bottom: 1.1rem;
+      flex-wrap: wrap;
     }
-    .club-cat {
+    .category-pill-group {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+    }
+    .cat-pill {
+      background: #e6f6f7;
+      color: #007a84;
       font-size: 0.72rem;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--primary);
-      display: block;
-    }
-    .members-badge {
-      background: #f0fdf4;
-      color: #15803d;
-      border: 1px solid #bbf7d0;
-      font-size: 0.72rem;
-      font-weight: 700;
-      padding: 0.15rem 0.45rem;
+      letter-spacing: 0.04em;
+      padding: 0.22rem 0.6rem;
       border-radius: 9999px;
-      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      border: 1px solid rgba(0, 154, 166, 0.25);
     }
-    .members-badge-btn {
-      background: #f0fdf4;
-      color: #15803d;
-      border: 1px solid #bbf7d0;
-      font-size: 0.72rem;
-      font-weight: 700;
-      padding: 0.2rem 0.55rem;
+    .verified-accreditation-pill {
+      background: #ecfdf5;
+      color: #047857;
+      border: 1px solid #a7f3d0;
+      font-size: 0.68rem;
+      font-weight: 800;
+      padding: 0.18rem 0.5rem;
       border-radius: 9999px;
-      white-space: nowrap;
+      letter-spacing: 0.02em;
+    }
+    .members-count-pill {
+      background: #f1f5f9;
+      color: #334155;
+      border: 1px solid #cbd5e1;
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 0.22rem 0.6rem;
+      border-radius: 9999px;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
       gap: 0.3rem;
-      transition: all 0.15s ease;
+      transition: all 0.2s ease;
     }
-    .members-badge-btn:hover {
-      background: #dcfce7;
-      border-color: #86efac;
-      transform: translateY(-1px);
-      box-shadow: 0 2px 5px rgba(21, 128, 61, 0.15);
+    .members-count-pill strong {
+      color: #0f172a;
+      font-weight: 800;
     }
-    .club-name {
+    .members-count-pill:hover {
+      background: #e2e8f0;
+      color: #0f172a;
+      transform: scale(1.03);
+    }
+
+    /* Identity Row */
+    .card-identity-row {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+      margin-bottom: 0.9rem;
+    }
+    .card-avatar-box {
+      width: 58px;
+      height: 58px;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1.5px solid #e2e8f0;
+      flex-shrink: 0;
+      background: #f8fafc;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .club-avatar-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .club-avatar-fallback {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #e6f6f7 0%, #cffafe 100%);
+      color: #007a84;
+      font-weight: 800;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      letter-spacing: -0.02em;
+    }
+    .card-title-group {
+      flex: 1;
+      min-width: 0;
+    }
+    .card-club-title {
       font-size: 1.15rem;
       font-weight: 800;
-      color: var(--secondary);
-      line-height: 1.25;
+      color: #003844;
+      line-height: 1.3;
+      margin-bottom: 0.35rem;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
     }
-    .club-acronym {
-      font-size: 0.78rem;
-      font-weight: 700;
-      color: var(--text-muted);
+    .card-badges-sub {
+      display: flex;
+      gap: 0.4rem;
+      align-items: center;
+      flex-wrap: wrap;
     }
-    .club-slogan {
-      font-style: italic;
+    .acronym-tag {
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
       color: #475569;
-      font-size: 0.88rem;
-      margin-bottom: 0.65rem;
+      font-weight: 700;
+      font-size: 0.72rem;
+      padding: 0.1rem 0.45rem;
+      border-radius: 6px;
+      letter-spacing: 0.03em;
     }
-    .club-mission {
-      font-size: 0.88rem;
+    .tracking-code-tag {
+      background: #f8fafc;
+      color: #64748b;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      padding: 0.1rem 0.4rem;
+      border-radius: 4px;
+    }
+
+    /* Slogan & Mission */
+    .card-body-content {
+      margin-bottom: 0.95rem;
+    }
+    .club-slogan-styled {
+      font-style: italic;
+      color: #028090;
+      font-size: 0.85rem;
+      font-weight: 600;
+      line-height: 1.4;
+      margin-bottom: 0.5rem;
+      padding-left: 0.5rem;
+      border-left: 2.5px solid #009aa6;
+    }
+    .quote-mark {
+      font-size: 1rem;
+      color: #009aa6;
+      font-weight: 800;
+    }
+    .club-mission-text {
+      font-size: 0.86rem;
       color: #334155;
       line-height: 1.5;
-      margin-bottom: 1rem;
       display: -webkit-box;
       -webkit-line-clamp: 3;
       -webkit-box-orient: vertical;
       overflow: hidden;
     }
-    .club-activities {
-      background: #f8fafc;
-      padding: 0.75rem;
-      border-radius: var(--radius-sm);
-      margin-bottom: 1rem;
-      font-size: 0.85rem;
+
+    /* Event Banner */
+    .card-event-banner {
+      background: linear-gradient(135deg, #f0fdfa 0%, #f8fafc 100%);
+      border: 1px solid #ccfbf1;
+      border-radius: 12px;
+      padding: 0.65rem 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.95rem;
     }
-    .activity-label {
+    .event-icon-badge {
+      font-size: 1.1rem;
+      background: #ffffff;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      flex-shrink: 0;
+    }
+    .event-details {
+      flex: 1;
+      min-width: 0;
+    }
+    .event-pre-label {
       display: block;
-      font-size: 0.7rem;
+      font-size: 0.66rem;
       text-transform: uppercase;
       font-weight: 700;
-      color: var(--text-muted);
+      letter-spacing: 0.05em;
+      color: #0d9488;
     }
-    .activity-name {
-      color: var(--secondary);
+    .event-title-text {
+      display: block;
+      font-size: 0.84rem;
+      color: #003844;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-    .club-footer {
-      border-top: 1px solid var(--border-subtle);
-      padding-top: 0.85rem;
+
+    /* Supervision Grid */
+    .card-supervision-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.65rem;
+      background: #f8fafc;
+      border: 1px solid #f1f5f9;
+      border-radius: 12px;
+      padding: 0.75rem;
       margin-top: auto;
-      margin-bottom: 0.75rem;
+      margin-bottom: 1rem;
     }
-    .pres-lbl {
-      font-size: 0.7rem;
-      color: var(--text-muted);
-      display: block;
-    }
-    .pres-filiere {
-      font-size: 0.78rem;
-      color: var(--text-muted);
-    }
-    .pres-advisor {
-      font-size: 0.75rem;
-      color: #64748b;
-      margin-top: 0.25rem;
-      display: block;
-      font-weight: 500;
-    }
-    
-    /* Club Join Bar */
-    .club-join-bar {
+    .sup-item {
       display: flex;
-      gap: 0.5rem;
-      margin-bottom: 0.65rem;
+      flex-direction: column;
+      min-width: 0;
     }
-    .btn-join-member {
-      flex: 1;
-      background: var(--primary);
-      color: #ffffff;
-      padding: 0.45rem 0.75rem;
-      border-radius: var(--radius-sm);
+    .sup-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: #64748b;
+      margin-bottom: 0.15rem;
+    }
+    .sup-name {
       font-size: 0.82rem;
+      color: #0f172a;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-weight: 700;
+    }
+    .sup-sub {
+      font-size: 0.72rem;
+      color: #64748b;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Primary Actions */
+    .card-primary-actions {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr 0.9fr;
+      gap: 0.45rem;
+      margin-bottom: 0.85rem;
+    }
+    .btn-cta-join {
+      background: linear-gradient(135deg, #009aa6 0%, #028090 100%);
+      color: #ffffff;
+      padding: 0.55rem 0.75rem;
+      border-radius: 10px;
+      font-size: 0.84rem;
       font-weight: 700;
       text-align: center;
-      transition: all 0.15s ease;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 1px 2px rgba(0, 154, 166, 0.2);
-    }
-    .btn-join-member:hover {
-      background: var(--primary-hover);
-      color: #ffffff;
-      transform: translateY(-1px);
-    }
-    .btn-members-view {
-      background: #eff6ff;
-      border: 1.5px solid #3b82f6;
-      color: #1d4ed8;
-      padding: 0.45rem 0.65rem;
-      border-radius: var(--radius-sm);
-      font-size: 0.8rem;
-      font-weight: 700;
-      transition: all 0.15s ease;
-      cursor: pointer;
-      white-space: nowrap;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.3rem;
-    }
-    .btn-members-view:hover {
-      background: #dbeafe;
-      color: #1e40af;
-      transform: translateY(-1px);
-    }
-    .btn-qr-view {
-      background: #f8fafc;
-      border: 1.5px solid var(--primary);
-      color: var(--primary);
-      padding: 0.45rem 0.65rem;
-      border-radius: var(--radius-sm);
-      font-size: 0.8rem;
-      font-weight: 700;
-      transition: all 0.15s ease;
-      cursor: pointer;
-      white-space: nowrap;
-    }
-    .btn-qr-view:hover {
-      background: var(--primary-light);
-    }
-    .btn-sheet-pdf {
-      background: #f0fdf4;
-      border: 1.5px solid #059669;
-      color: #047857;
-      padding: 0.45rem 0.65rem;
-      border-radius: var(--radius-sm);
-      font-size: 0.8rem;
-      font-weight: 700;
-      transition: all 0.15s ease;
-      cursor: pointer;
-      white-space: nowrap;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.3rem;
-    }
-    .btn-sheet-pdf:hover {
-      background: #dcfce7;
-      color: #065f46;
-      transform: translateY(-1px);
-    }
-    .btn-sheet-pdf-alt {
-      background: #f0fdf4;
-      border-color: #a7f3d0;
-      color: #059669;
-    }
-    .btn-sheet-pdf-alt:hover {
-      background: #059669;
-      color: #ffffff;
-      border-color: #059669;
-    }
-    .btn-modal-sheet {
-      background: #ecfdf5;
-      border: 1px solid #10b981;
-      color: #047857;
-      font-weight: 700;
-      font-size: 0.82rem;
-      padding: 0.4rem 0.8rem;
-      border-radius: var(--radius-sm);
-      display: inline-flex;
-      align-items: center;
       gap: 0.35rem;
-      transition: all 0.15s ease;
-      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0, 154, 166, 0.25);
+      transition: all 0.2s ease;
+      text-decoration: none;
     }
-    .btn-modal-sheet:hover {
-      background: #059669;
+    .btn-cta-join:hover {
+      background: linear-gradient(135deg, #00828c 0%, #003844 100%);
       color: #ffffff;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 10px rgba(0, 154, 166, 0.35);
     }
-
-    /* Card actions bar */
-    .club-actions-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 0.5rem;
-      border-top: 1px dashed var(--border-color);
-      padding-top: 0.75rem;
-    }
-    .contact-pill a {
-      background: var(--primary-light);
-      color: var(--primary);
-      padding: 0.35rem 0.75rem;
-      border-radius: 9999px;
+    .btn-action-outline {
+      padding: 0.55rem 0.6rem;
+      border-radius: 10px;
       font-size: 0.78rem;
       font-weight: 700;
       display: inline-flex;
       align-items: center;
+      justify-content: center;
+      gap: 0.3rem;
       transition: all 0.15s ease;
+      cursor: pointer;
+      white-space: nowrap;
     }
-    .contact-pill a:hover {
-      background: var(--primary);
+    .btn-action-outline.btn-sheet {
+      background: #f0fdf4;
+      border: 1.5px solid #10b981;
+      color: #047857;
+    }
+    .btn-action-outline.btn-sheet:hover {
+      background: #10b981;
+      color: #ffffff;
+      transform: translateY(-1px);
+    }
+    .btn-action-outline.btn-qr {
+      background: #f8fafc;
+      border: 1.5px solid #cbd5e1;
+      color: #334155;
+    }
+    .btn-action-outline.btn-qr:hover {
+      background: #003844;
+      border-color: #003844;
+      color: #ffffff;
+      transform: translateY(-1px);
+    }
+
+    /* Management Bottom Strip */
+    .card-bottom-strip {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 0.75rem;
+      border-top: 1px dashed #e2e8f0;
+    }
+    .contact-email-btn {
+      color: #009aa6;
+      font-size: 0.76rem;
+      font-weight: 700;
+      background: #f0fdfe;
+      padding: 0.3rem 0.65rem;
+      border-radius: 6px;
+      border: 1px solid rgba(0, 154, 166, 0.2);
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      text-decoration: none;
+    }
+    .contact-email-btn:hover {
+      background: #009aa6;
       color: #ffffff;
     }
-    .card-mgmt-btns {
+    .mgmt-actions-group {
       display: flex;
       gap: 0.35rem;
     }
-    .btn-card-action {
-      border: 1px solid #cbd5e1;
+    .btn-mgmt {
+      border: 1px solid #e2e8f0;
       background: #ffffff;
-      border-radius: var(--radius-sm);
-      padding: 0.3rem 0.6rem;
-      font-size: 0.76rem;
+      border-radius: 6px;
+      padding: 0.25rem 0.55rem;
+      font-size: 0.74rem;
       font-weight: 600;
-      color: #334155;
+      color: #64748b;
+      cursor: pointer;
+      transition: all 0.15s ease;
       display: inline-flex;
       align-items: center;
       gap: 0.25rem;
-      transition: all 0.15s ease;
     }
-    .btn-card-action.btn-edit:hover {
+    .btn-mgmt.btn-edit:hover {
       background: #f0fdf4;
       border-color: #86efac;
       color: #166534;
     }
-    .btn-card-action.btn-delete:hover {
+    .btn-mgmt.btn-delete:hover {
       background: #fef2f2;
       border-color: #fca5a5;
-      color: #991b1b;
+      color: #b91c1c;
     }
 
     /* Toast banner */
@@ -2739,6 +2848,17 @@ export class ClubDirectoryComponent implements OnInit {
     if (filiere.includes('Ingénierie') || filiere.includes('Génie')) return 'fac-ingenierie';
     if (filiere.includes('Business') || filiere.includes('Management')) return 'fac-business';
     return 'fac-default';
+  }
+
+  getCategoryIcon(typology: string): string {
+    if (!typology) return '🏛️';
+    const t = typology.toLowerCase();
+    if (t.includes('médical') || t.includes('santé') || t.includes('scientifique') || t.includes('académique')) return '🩺';
+    if (t.includes('sport') || t.includes('bien-être')) return '⚽';
+    if (t.includes('culture') || t.includes('artistique') || t.includes('art')) return '🎨';
+    if (t.includes('citoyen') || t.includes('humanitaire') || t.includes('rse')) return '🤝';
+    if (t.includes('entrepreneuriat') || t.includes('tech') || t.includes('innovation') || t.includes('débat')) return '💡';
+    return '🎓';
   }
 
   exportMembersCsv(): void {
